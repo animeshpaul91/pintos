@@ -86,7 +86,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* List element. */
+/* List element. Refers to a Single list element */
 struct list_elem 
   {
     struct list_elem *prev;     /* Previous list element. */
@@ -94,7 +94,7 @@ struct list_elem
   };
 
 /* List. */
-struct list 
+struct list /* Identifies a unique list by tracking its head and tail */
   {
     struct list_elem head;      /* List head. */
     struct list_elem tail;      /* List tail. */
@@ -124,7 +124,7 @@ struct list
 
 void list_init (struct list *);
 
-/* List traversal. */
+/* List traversal Prototypes defined in list.c */
 struct list_elem *list_begin (struct list *);
 struct list_elem *list_next (struct list_elem *);
 struct list_elem *list_end (struct list *);
