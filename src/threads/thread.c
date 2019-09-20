@@ -612,9 +612,7 @@ bool high_priority_condition(const struct list_elem *first, const struct list_el
 void thread_unblock_without_yield (struct thread *t)
 {
   enum intr_level old_level;
-
   ASSERT (is_thread (t));
-
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
@@ -626,7 +624,6 @@ void thread_sleep(int64_t ticks)
 {
   enum intr_level old_level;
   struct thread *t = thread_current();
-  ASSERT(!intr_context());
   t->wakeup_ticks = ticks;
 
   //Synchronize for sema_down
@@ -638,30 +635,22 @@ void thread_sleep(int64_t ticks)
   old_level = intr_disable();
   thread_block(); //puts the thread to sleep.
   intr_set_level(old_level);
-  return;
 }
 
 void thread_wake_up(int64_t wakeup_at_tick) //This is called by the interrupt handler.
 {
+  struct thread *t;
   struct list_elem *wake_this_up;
-  struct thread *t = NULL;
   
   //No Synchonization needed as this function is called by interrupt handler at every tick
   while(!list_empty(&sleep_list_ordered))
   {
     wake_this_up = list_begin(&sleep_list_ordered);
     t = list_entry(wake_this_up, struct thread, elem);
-    if (t->wakeup_ticks <= wakeup_at_tick) //Current timestamp is equal to or exceeded the wakeup time of the thread
-    {
-      list_pop_front(&sleep_list_ordered);
-      thread_unblock_without_yield(t);
-    }
-    else
-    {
+    if (t->wakeup_ticks > wakeup_at_tick) //Current timestamp is less than the wakeup time of the thread
       break;
-    }
+    list_pop_front(&sleep_list_ordered);
+    thread_unblock_without_yield(t);
   }
-  return;
 }
-
 //Added Functions End.
