@@ -318,7 +318,7 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
 
   if (!list_empty (&cond->waiters)) 
     sema_up (&list_entry (list_pop_front (&cond->waiters),
-                          struct semaphore_elem, elem)->semaphore);
+                          struct semaphore_elem, elem)->semaphore); //Increments the semaphore value which has been set to 0 in line # 297.
 }
 
 /* Wakes up all threads, if any, waiting on COND (protected by
@@ -328,7 +328,7 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
    make sense to try to signal a condition variable within an
    interrupt handler. */
 void
-cond_broadcast (struct condition *cond, struct lock *lock) 
+cond_broadcast (struct condition *cond, struct lock *lock) //Wakes up all threads waiting in cond->
 {
   ASSERT (cond != NULL);
   ASSERT (lock != NULL);
