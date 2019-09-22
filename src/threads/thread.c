@@ -21,7 +21,7 @@
 #define THREAD_MAGIC 0xcd6abf4b
 
 /* List of processes in THREAD_READY state, that is, processes
-   that are ready to run but not actually running. */
+   that are ready to run but not actually running i.e Ready Queue*/
 static struct list ready_list;
 
 /* List of all processes.  Processes are added to this list
@@ -72,7 +72,7 @@ void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
 /* Initializes the threading system by transforming the code
-   that's currently running into a thread.  This can't work in
+   that's currently running into a thread. This can't work in
    general and it is possible in this case only because loader.S
    was careful to put the bottom of the stack at a page boundary.
 
@@ -552,7 +552,7 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void) 
 {
-  struct thread *cur = running_thread ();
+  struct thread *cur = running_thread (); //State of current thread has changed from running to blocked or some other state.
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;
 
