@@ -76,7 +76,7 @@ static tid_t allocate_tid (void);
    general and it is possible in this case only because loader.S
    was careful to put the bottom of the stack at a page boundary.
 
-   Also initializes the run queue and the tid lock.
+   Also initializes the run queue and the tid lock. Run queue is referred to as the ready list.
 
    After calling this function, be sure to initialize the page
    allocator before trying to create any threads with
@@ -94,7 +94,7 @@ thread_init (void)
   list_init (&all_list);
 
   /* Set up a thread structure for the running thread. */
-  initial_thread = running_thread ();
+  initial_thread = running_thread (); //transforms running code to a thread struct *
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
@@ -111,7 +111,7 @@ thread_start (void)
   thread_create ("idle", PRI_MIN, idle, &idle_started);
 
   /* Start preemptive thread scheduling. */
-  intr_enable ();
+  intr_enable (); //Enables Interrupts
 
   /* Wait for the idle thread to initialize idle_thread. */
   sema_down (&idle_started);
@@ -125,13 +125,13 @@ thread_tick (void)
   struct thread *t = thread_current ();
 
   /* Update statistics. */
-  if (t == idle_thread)
+  if (t == idle_thread) //Idle Thread
     idle_ticks++;
-#ifdef USERPROG
+#ifdef USERPROG //User Thread
   else if (t->pagedir != NULL)
     user_ticks++;
 #endif
-  else
+  else //Kernel Thread
     kernel_ticks++;
 
   /* Enforce preemption. */
@@ -293,7 +293,7 @@ thread_exit (void)
   list_remove (&thread_current()->allelem);
   thread_current ()->status = THREAD_DYING;
   schedule ();
-  NOT_REACHED ();
+  NOT_REACHED (); //This line of code will never be reached.
 }
 
 /* Yields the CPU.  The current thread is not put to sleep and
@@ -388,8 +388,8 @@ thread_get_recent_cpu (void)
 static void
 idle (void *idle_started_ UNUSED) 
 {
-  struct semaphore *idle_started = idle_started_;
-  idle_thread = thread_current ();
+  struct semaphore *idle_started = idle_started_; //Cast genertic pointer to struct semaphore * type.
+  idle_thread = thread_current (); // idle_thread initialized at this point
   sema_up (idle_started);
 
   for (;;) 
@@ -552,7 +552,7 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void) 
 {
-  struct thread *cur = running_thread (); //State of current thread has changed from running to blocked or some other state.
+  struct thread *cur = running_thread (); //State of current thread has changed from running to either blocked, dying or ready.
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;
 
@@ -562,18 +562,18 @@ schedule (void)
 
   if (cur != next)
     prev = switch_threads (cur, next);
-  thread_schedule_tail (prev);
+  thread_schedule_tail (prev); //The new thread destroys the previous(caller) thread when the caller is in the dying state. 
 }
 
-/* Returns a tid to use for a new thread. */
+/* Returns a tid to use for a new thread. Generates incremental TID's acrosss multiple calls. */
 static tid_t
 allocate_tid (void) 
 {
-  static tid_t next_tid = 1;
+  static tid_t next_tid = 1; //This is important because its is initialized only once.
   tid_t tid;
 
   lock_acquire (&tid_lock);
-  tid = next_tid++;
+  tid = next_tid++; //This line of code behaves as a Critical Section across multiple threads.
   lock_release (&tid_lock);
 
   return tid;
