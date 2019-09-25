@@ -8,6 +8,7 @@
         "tuple": "c",
         "type_traits": "c",
         "utility": "c",
-        "thread.h": "c"
+        "thread.h": "c",
+        "inttypes.h": "c"
     }
 }
