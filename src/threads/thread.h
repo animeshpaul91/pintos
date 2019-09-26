@@ -89,8 +89,12 @@ struct thread
     uint8_t *stack;                     /* Saved stack pointer. */
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
+
     //Added struct elements
     int64_t wakeup_ticks;               /* Wakeup timestamp for thread */
+    int initial_priority;               /* Initial Priority for Reverting Threads's originnal Priority */
+    
+    //End of Added Struct Elements 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
