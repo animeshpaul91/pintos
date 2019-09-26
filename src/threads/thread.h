@@ -108,11 +108,6 @@ struct thread
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
 
-//Added Variables start
-struct list sleep_list_ordered;
-struct semaphore sleep_list_semaphore;
-//End
-
 void thread_init (void);
 void thread_start (void);
 
