@@ -93,6 +93,11 @@ thread_init (void)
   list_init (&ready_list);
   list_init (&all_list);
 
+  //Added starts
+  list_init(&sleep_list_ordered);
+  sema_init(&sleep_list_semaphore, 1);
+  //End
+
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread (); //transforms running code to a thread struct *
   init_thread (initial_thread, "main", PRI_DEFAULT);
@@ -582,3 +587,76 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+//Added Functions start
+
+bool less_wakeup_time(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED)
+{ //returns true if first->wakeup_time < second->wakeup_time
+  struct thread *fir = list_entry(first, struct thread, elem);
+  struct thread *sec = list_entry(second, struct thread, elem);
+  return ((int64_t) fir->wakeup_ticks < (int64_t) sec->wakeup_ticks);
+}
+
+bool high_priority_condition(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED)
+{ //returns true if first->priority > second->priority
+  struct thread *fir = list_entry(first, struct thread, elem);
+  struct thread *sec = list_entry(second, struct thread, elem);
+  return (fir->priority > sec->priority);
+}
+
+void thread_unblock_without_yield (struct thread *t)
+{
+  enum intr_level old_level;
+
+  ASSERT (is_thread (t));
+
+  old_level = intr_disable ();
+  ASSERT (t->status == THREAD_BLOCKED);
+  list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
+  t->status = THREAD_READY;
+  intr_set_level (old_level);
+}
+
+void thread_sleep(int64_t ticks)
+{
+  enum intr_level old_level;
+  struct thread *t = thread_current();
+  ASSERT(!intr_context());
+  t->wakeup_ticks = ticks;
+
+  //Synchronize for sema_down
+  sema_down(&sleep_list_semaphore);
+  list_insert_ordered(&sleep_list_ordered, &t->elem, less_wakeup_time, NULL);
+  sema_up(&sleep_list_semaphore);
+  
+  //Disabling interrupts before blocking current thread 
+  old_level = intr_disable();
+  thread_block(); //puts the thread to sleep.
+  intr_set_level(old_level);
+  return;
+}
+
+void thread_wake_up(int64_t wakeup_at_tick) //This is called by the interrupt handler.
+{
+  struct list_elem *wake_this_up;
+  struct thread *t = NULL;
+  
+  //No Synchonization needed as this function is called by interrupt handler at every tick
+  while(!list_empty(&sleep_list_ordered))
+  {
+    wake_this_up = list_begin(&sleep_list_ordered);
+    t = list_entry(wake_this_up, struct thread, elem);
+    if (t->wakeup_ticks <= wakeup_at_tick) //Current timestamp is equal to or exceeded the wakeup time of the thread
+    {
+      list_pop_front(&sleep_list_ordered);
+      thread_unblock_without_yield(t);
+    }
+    else
+    {
+      break;
+    }
+  }
+  return;
+}
+
+//Added Functions End.

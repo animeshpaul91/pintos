@@ -9,6 +9,7 @@
         "type_traits": "c",
         "utility": "c",
         "thread.h": "c",
-        "inttypes.h": "c"
+        "inttypes.h": "c",
+        "synch.h": "c"
     }
 }
