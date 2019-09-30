@@ -60,8 +60,8 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 bool thread_mlfqs;
 
 //Added Variables start
-struct list sleep_list_ordered;
-struct semaphore sleep_list_semaphore;
+static struct list sleep_list_ordered;
+static struct semaphore sleep_list_semaphore;
 //End
 
 static void kernel_thread (thread_func *, void *aux);
@@ -647,7 +647,7 @@ void thread_wake_up(int64_t wakeup_at_tick) //This is called by the interrupt ha
   {
     wake_this_up = list_begin(&sleep_list_ordered);
     t = list_entry(wake_this_up, struct thread, elem);
-    if (t->wakeup_ticks > wakeup_at_tick) //Current timestamp is less than the wakeup time of the thread
+    if (t->wakeup_ticks > wakeup_at_tick) //The wakeup time of the thread is greater than the current timestamp. Break this loop as list is sorted.
       break;
     list_pop_front(&sleep_list_ordered);
     thread_unblock_without_yield(t);
