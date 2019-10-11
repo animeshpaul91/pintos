@@ -21,7 +21,7 @@
 #define THREAD_MAGIC 0xcd6abf4b
 
 /* List of processes in THREAD_READY state, that is, processes
-   that are ready to run but not actually running. */
+   that are ready to run but not actually running i.e Ready Queue*/
 static struct list ready_list;
 
 /* List of all processes.  Processes are added to this list
@@ -59,6 +59,11 @@ static unsigned thread_ticks;   /* # of timer ticks since last yield. */
    Controlled by kernel command-line option "-o mlfqs". */
 bool thread_mlfqs;
 
+//Added Variables start
+static struct list sleep_list_ordered;
+static struct semaphore sleep_list_semaphore;
+//End
+
 static void kernel_thread (thread_func *, void *aux);
 
 static void idle (void *aux UNUSED);
@@ -72,11 +77,11 @@ void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
 /* Initializes the threading system by transforming the code
-   that's currently running into a thread.  This can't work in
+   that's currently running into a thread. This can't work in
    general and it is possible in this case only because loader.S
    was careful to put the bottom of the stack at a page boundary.
 
-   Also initializes the run queue and the tid lock.
+   Also initializes the run queue and the tid lock. Run queue is referred to as the ready list.
 
    After calling this function, be sure to initialize the page
    allocator before trying to create any threads with
@@ -93,8 +98,13 @@ thread_init (void)
   list_init (&ready_list);
   list_init (&all_list);
 
+  //Added starts
+  list_init(&sleep_list_ordered);
+  sema_init(&sleep_list_semaphore, 1);
+  //End
+
   /* Set up a thread structure for the running thread. */
-  initial_thread = running_thread ();
+  initial_thread = running_thread (); //transforms running code to a thread struct *
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
@@ -111,7 +121,7 @@ thread_start (void)
   thread_create ("idle", PRI_MIN, idle, &idle_started);
 
   /* Start preemptive thread scheduling. */
-  intr_enable ();
+  intr_enable (); //Enables Interrupts
 
   /* Wait for the idle thread to initialize idle_thread. */
   sema_down (&idle_started);
@@ -125,13 +135,13 @@ thread_tick (void)
   struct thread *t = thread_current ();
 
   /* Update statistics. */
-  if (t == idle_thread)
+  if (t == idle_thread) //Idle Thread
     idle_ticks++;
-#ifdef USERPROG
+#ifdef USERPROG //User Thread
   else if (t->pagedir != NULL)
     user_ticks++;
 #endif
-  else
+  else //Kernel Thread
     kernel_ticks++;
 
   /* Enforce preemption. */
@@ -293,7 +303,7 @@ thread_exit (void)
   list_remove (&thread_current()->allelem);
   thread_current ()->status = THREAD_DYING;
   schedule ();
-  NOT_REACHED ();
+  NOT_REACHED (); //This line of code will never be reached.
 }
 
 /* Yields the CPU.  The current thread is not put to sleep and
@@ -388,8 +398,8 @@ thread_get_recent_cpu (void)
 static void
 idle (void *idle_started_ UNUSED) 
 {
-  struct semaphore *idle_started = idle_started_;
-  idle_thread = thread_current ();
+  struct semaphore *idle_started = idle_started_; //Cast genertic pointer to struct semaphore * type.
+  idle_thread = thread_current (); // idle_thread initialized at this point
   sema_up (idle_started);
 
   for (;;) 
@@ -552,7 +562,7 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void) 
 {
-  struct thread *cur = running_thread ();
+  struct thread *cur = running_thread (); //State of current thread has changed from running to either blocked, dying or ready.
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;
 
@@ -562,18 +572,18 @@ schedule (void)
 
   if (cur != next)
     prev = switch_threads (cur, next);
-  thread_schedule_tail (prev);
+  thread_schedule_tail (prev); //The new thread destroys the previous(caller) thread when the caller is in the dying state. 
 }
 
-/* Returns a tid to use for a new thread. */
+/* Returns a tid to use for a new thread. Generates incremental TID's acrosss multiple calls. */
 static tid_t
 allocate_tid (void) 
 {
-  static tid_t next_tid = 1;
+  static tid_t next_tid = 1; //This is important because its is initialized only once.
   tid_t tid;
 
   lock_acquire (&tid_lock);
-  tid = next_tid++;
+  tid = next_tid++; //This line of code behaves as a Critical Section across multiple threads.
   lock_release (&tid_lock);
 
   return tid;
@@ -582,3 +592,65 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+//Added Functions start
+
+bool less_wakeup_time(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED)
+{ //returns true if first->wakeup_time < second->wakeup_time
+  struct thread *fir = list_entry(first, struct thread, elem);
+  struct thread *sec = list_entry(second, struct thread, elem);
+  return ((int64_t) fir->wakeup_ticks < (int64_t) sec->wakeup_ticks);
+}
+
+bool high_priority_condition(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED)
+{ //returns true if first->priority > second->priority
+  struct thread *fir = list_entry(first, struct thread, elem);
+  struct thread *sec = list_entry(second, struct thread, elem);
+  return (fir->priority > sec->priority);
+}
+
+void thread_unblock_without_yield (struct thread *t)
+{
+  enum intr_level old_level;
+  ASSERT (is_thread (t));
+  old_level = intr_disable ();
+  ASSERT (t->status == THREAD_BLOCKED);
+  list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
+  t->status = THREAD_READY;
+  intr_set_level (old_level);
+}
+
+void thread_sleep(int64_t ticks)
+{
+  enum intr_level old_level;
+  struct thread *t = thread_current();
+  t->wakeup_ticks = ticks;
+
+  //Synchronize for sema_down
+  sema_down(&sleep_list_semaphore);
+  list_insert_ordered(&sleep_list_ordered, &t->elem, less_wakeup_time, NULL);
+  sema_up(&sleep_list_semaphore);
+  
+  //Disabling interrupts before blocking current thread 
+  old_level = intr_disable();
+  thread_block(); //puts the thread to sleep.
+  intr_set_level(old_level);
+}
+
+void thread_wake_up(int64_t wakeup_at_tick) //This is called by the interrupt handler.
+{
+  struct thread *t;
+  struct list_elem *wake_this_up;
+  
+  //No Synchonization needed as this function is called by interrupt handler at every tick
+  while(!list_empty(&sleep_list_ordered))
+  {
+    wake_this_up = list_begin(&sleep_list_ordered);
+    t = list_entry(wake_this_up, struct thread, elem);
+    if (t->wakeup_ticks > wakeup_at_tick) //The wakeup time of the thread is greater than the current timestamp. Break this loop as list is sorted.
+      break;
+    list_pop_front(&sleep_list_ordered);
+    thread_unblock_without_yield(t);
+  }
+}
+//Added Functions End.
