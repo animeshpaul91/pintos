@@ -98,10 +98,10 @@ thread_init (void)
   list_init (&ready_list);
   list_init (&all_list);
 
-  //Added starts
+  //Added Code starts
   list_init(&sleep_list_ordered);
   sema_init(&sleep_list_semaphore, 1);
-  //End
+  //Added Code ends
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread (); //transforms running code to a thread struct *
@@ -211,6 +211,11 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  //Added Code starts
+  if (t->priority > thread_get_priority()) //New thread's priority is greater than calling threads priority
+    thread_yield();
+  //Added Code ends   
+
   return tid;
 }
 
@@ -247,8 +252,21 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  
+  /* Actual Code below
+  list_push_back (&ready_list, &t->elem); */
+  //Added Code begins
+  list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
+  /* thread t inserted in ready queue in its proper position as per its priority */
+  //Added Code Ends
+
   t->status = THREAD_READY;
+
+  //Added Code Begins
+  if (t->priority > thread_get_priority() && thread_tid() != 2) //if the running thread is not idle thread and has a lesser priority than awaken thread
+    thread_yield();
+  //Added Code Ends
+
   intr_set_level (old_level);
 }
 
@@ -317,8 +335,11 @@ thread_yield (void)
   ASSERT (!intr_context ());
 
   old_level = intr_disable ();
-  if (cur != idle_thread) 
-    list_push_back (&ready_list, &cur->elem);
+  if (cur != idle_thread) //Added Code Starts
+    list_insert_ordered(&ready_list, &cur->elem, high_priority_condition, NULL);
+    //Added Code Ends
+    /* Actual Code below
+    list_push_back (&ready_list, &cur->elem); */
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -345,7 +366,24 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  /* Actual Code 
+  thread_current ()->priority = new_priority; */
+  //Added Code starts
+  struct thread *t = thread_current();
+  t->initial_priority = new_priority;
+  t->priority = new_priority;
+
+  if (!list_empty(&ready_list) && t->status == THREAD_RUNNING) { //if this thread is running
+    if (list_entry(list_front(&ready_list), struct thread, elem)->priority > t->priority) //Preempt Running thread if thread in ready queue has higher priority
+    thread_yield();
+  }
+  else if (t->status == THREAD_READY) //else if this thread is in ready queue.
+  {
+    /* Any Change in the order of the ready list due to Change in Priority */
+    list_remove(&t->elem);
+    list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
+  }
+  //Added code ends
 }
 
 /* Returns the current thread's priority. */
@@ -473,6 +511,11 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  
+  //Added Code Starts
+  t->wakeup_ticks = 0;
+  t->initial_priority = priority;
+  //Added Code Ends
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -609,7 +652,7 @@ bool high_priority_condition(const struct list_elem *first, const struct list_el
   return (fir->priority > sec->priority);
 }
 
-void thread_unblock_without_yield (struct thread *t)
+void thread_unblock_without_yield (struct thread *t) //Removes a sleeping thread from Waiting List and inserts it into Ready List.
 {
   enum intr_level old_level;
   ASSERT (is_thread (t));
@@ -625,7 +668,6 @@ void thread_sleep(int64_t ticks)
   enum intr_level old_level;
   struct thread *t = thread_current();
   t->wakeup_ticks = ticks;
-
   //Synchronize for sema_down
   sema_down(&sleep_list_semaphore);
   list_insert_ordered(&sleep_list_ordered, &t->elem, less_wakeup_time, NULL);
