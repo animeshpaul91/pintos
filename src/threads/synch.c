@@ -133,6 +133,8 @@ sema_up (struct semaphore *sema)
   
   else //There are no threads waiting. Simple Increment Sema.
     sema->value++;
+  intr_set_level (old_level);
+
 }
 
 static void sema_test_helper (void *sema_);
