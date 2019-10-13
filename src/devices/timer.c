@@ -174,7 +174,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
   //Added code for Alarm Clock
   thread_wake_up(timer_ticks());
   thread_tick ();
-  // Added code ends
   //Added code ends
 }
 
