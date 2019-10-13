@@ -434,7 +434,7 @@ thread_set_nice (int nice UNUSED)
 
 /* Returns the current thread's nice value. */
 int
-thread_get_nice (void) 
+thread_get_nice (void)
 {
   return thread_current()->nice;
 }
@@ -443,8 +443,7 @@ thread_get_nice (void)
 int
 thread_get_load_avg (void) 
 {
-    return CONVERT_FP_INT(thread_current()->recent_cpu * 100);
-
+    return CONVERT_FP_INT(load_avg * 100);
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
