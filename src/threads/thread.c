@@ -215,6 +215,11 @@ thread_create (const char *name, int priority,
   thread_unblock (t);
 
   //Added Code starts
+  if(thread_mlfqs)
+  {
+    thread_calculate_recent_cpu(thread_current(), NULL);
+    thread_calculate_mlfqs_priority(thread_current(), NULL);
+  }
   if (t->priority > thread_get_priority()) //New thread's priority is greater than calling threads priority
     thread_yield();
   //Added Code ends   
@@ -410,8 +415,10 @@ thread_set_nice (int nice UNUSED)
     return;
   struct thread* t = thread_current();
   t-> nice = nice;
+
   //Calculate priority
   thread_calculate_mlfqs_priority(t, NULL);
+
   // Sort the list: Update current thread to correct location in ready list
   if (t->status == THREAD_READY)
   {

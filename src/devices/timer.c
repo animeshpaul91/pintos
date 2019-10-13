@@ -195,8 +195,8 @@ timer_interrupt (struct intr_frame *args UNUSED)
     if(timer_ticks() % 4 == 0)
     {
       thread_foreach(thread_calculate_mlfqs_priority, NULL);
-      // All the priorities have been updated,
-      //the ready list needs to be sorted
+      //All the priorities have been updated,
+      //the ready_list needs to be sorted
       ready_list_sort();
     }
     if(t->status == THREAD_RUNNING)
