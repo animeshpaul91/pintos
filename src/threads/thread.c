@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "devices/timer.h"
 #include "threads/fixed-point.h" 
 #ifdef USERPROG
 #include "userprog/process.h"
@@ -147,8 +148,36 @@ thread_tick (void)
   else //Kernel Thread
     kernel_ticks++;
 
+  //Increment Ticks of the thread
+  thread_ticks++;
+
+  //Added code for MLFQS
+  /*
+    - Recent cpu is incremented for only the running thread
+    - Recent cpu is calculated for all threads every second (timer_ticks () % TIMER_FREQ == 0)
+    - Load avg is calculated every second
+    - Thread priority is calculated for all threads every fourth  tick
+  */
+  if(thread_mlfqs == true)
+  {
+    if(timer_ticks() % TIMER_FREQ == 0)
+    {
+      thread_calculate_load_avg();
+      thread_foreach(thread_calculate_recent_cpu, NULL);
+    }
+    if(timer_ticks() % 4 == 0)
+    {
+      thread_foreach(thread_calculate_mlfqs_priority, NULL);
+      //All the priorities have been updated,
+      //the ready_list needs to be sorted
+      ready_list_sort();
+    }
+    if(t->status == THREAD_RUNNING)
+      thread_inc_recent_cpu(thread_current());
+  }
+
   /* Enforce preemption. */
-  if (++thread_ticks >= TIME_SLICE)
+  if (thread_ticks >= TIME_SLICE)
     intr_yield_on_return ();
 }
 
@@ -222,7 +251,9 @@ thread_create (const char *name, int priority,
     t->recent_cpu = 0;
     thread_calculate_mlfqs_priority(t, NULL);
   }
-  if (t->priority > thread_get_priority()) //New thread's priority is greater than calling threads priority
+
+  //New thread's priority is greater than calling threads priority
+  if (t->priority > thread_get_priority())
     thread_yield();
   //Added Code ends   
 
@@ -698,7 +729,7 @@ void thread_unblock_without_yield (struct thread *t)
   intr_set_level (old_level);
 }
 
-void thread_sleep(int64_t ticks)
+void thread_sleep (int64_t ticks)
 {
   enum intr_level old_level;
   struct thread *t = thread_current();
@@ -714,7 +745,7 @@ void thread_sleep(int64_t ticks)
   intr_set_level(old_level);
 }
 
-void thread_wake_up(int64_t wakeup_at_tick) //This is called by the interrupt handler.
+void thread_wake_up (int64_t wakeup_at_tick) //This is called by the interrupt handler.
 {
   struct thread *t;
   struct list_elem *wake_this_up;
@@ -733,7 +764,7 @@ void thread_wake_up(int64_t wakeup_at_tick) //This is called by the interrupt ha
 }
 
 void
-thread_calculate_mlfqs_priority(struct thread* t, void *aux UNUSED)
+thread_calculate_mlfqs_priority (struct thread* t, void *aux UNUSED)
 {
   //priority = PRI_MAX - (recent_cpu / 4) - (nice * 2)
   int priority;
@@ -748,7 +779,7 @@ thread_calculate_mlfqs_priority(struct thread* t, void *aux UNUSED)
 }
 
 void
-ready_list_sort(void){
+ready_list_sort (void){
   enum intr_level old_level;
   if(!list_empty(&ready_list))
     list_sort(&ready_list, high_priority_condition, NULL);
@@ -756,7 +787,7 @@ ready_list_sort(void){
 }
 
 void
-thread_calculate_recent_cpu(struct thread *t, void *aux)
+thread_calculate_recent_cpu (struct thread *t, void *aux)
 {
   // Calculate the coefficient of recent_cpu first, to avoid overflow.
   // Then multiply load_avg with recent_cpu.
@@ -768,13 +799,13 @@ thread_calculate_recent_cpu(struct thread *t, void *aux)
 }
 
 void
-thread_inc_recent_cpu(struct thread *t)
+thread_inc_recent_cpu (struct thread *t)
 {
   ADD_FP_INT(t->recent_cpu, 1);
 }
 
 void
-thread_calculate_load_avg(void)
+thread_calculate_load_avg (void)
 {
   // load_avg=(59/60)*load_avg+(1/60)*ready_threads
   int ready_threads = list_size(&ready_list);

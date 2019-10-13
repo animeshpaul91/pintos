@@ -175,33 +175,6 @@ timer_interrupt (struct intr_frame *args UNUSED)
   thread_wake_up(timer_ticks());
   thread_tick ();
   // Added code ends
-
-  //Added code for MLFQS
-  /*
-    - Recent cpu is incremented for only the running thread
-    - Recent cpu is calculated for all threads every second (timer_ticks () % TIMER_FREQ == 0)
-    - Load avg is calculated every second
-    - Thread priority is calculated for all threads every fourth  tick
-  */
-  if(thread_mlfqs == true)
-  {
-    struct thread *t = thread_current ();
-
-    if(timer_ticks() % TIMER_FREQ == 0)
-    {
-      thread_calculate_load_avg();
-      thread_foreach(thread_calculate_recent_cpu, NULL);
-    }
-    if(timer_ticks() % 4 == 0)
-    {
-      thread_foreach(thread_calculate_mlfqs_priority, NULL);
-      //All the priorities have been updated,
-      //the ready_list needs to be sorted
-      ready_list_sort();
-    }
-    if(t->status == THREAD_RUNNING)
-      thread_inc_recent_cpu(thread_current());
-  }
   //Added code ends
 }
 
