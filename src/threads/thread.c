@@ -50,7 +50,7 @@ struct kernel_thread_frame
 static long long idle_ticks;    /* # of timer ticks spent idle. */
 static long long kernel_ticks;  /* # of timer ticks in kernel threads. */
 static long long user_ticks;    /* # of timer ticks in user programs. */
-static int load_avg;
+static int load_avg = 0;
 
 /* Scheduling. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
@@ -103,7 +103,7 @@ thread_init (void)
   //Added Code starts
   list_init(&sleep_list_ordered);
   sema_init(&sleep_list_semaphore, 1);
-  load_avg = 0; //Intitalized to 0 at system boot
+  // load_avg = 0; //Intitalized to 0 at system boot
   //Added Code ends
 
   /* Set up a thread structure for the running thread. */
@@ -217,8 +217,10 @@ thread_create (const char *name, int priority,
   //Added Code starts
   if(thread_mlfqs)
   {
-    thread_calculate_recent_cpu(thread_current(), NULL);
-    thread_calculate_mlfqs_priority(thread_current(), NULL);
+    struct thread *t = thread_current();
+    t->nice = 0;
+    t->recent_cpu = 0;
+    thread_calculate_mlfqs_priority(t, NULL);
   }
   if (t->priority > thread_get_priority()) //New thread's priority is greater than calling threads priority
     thread_yield();
@@ -540,7 +542,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  t->priority = priority;
+  if (!thread_mlfqs)
+    t->priority = priority;
   t->magic = THREAD_MAGIC;
   
   //Added Code Starts
@@ -746,8 +749,10 @@ thread_calculate_mlfqs_priority(struct thread* t, void *aux UNUSED)
 
 void
 ready_list_sort(void){
+  enum intr_level old_level;
   if(!list_empty(&ready_list))
     list_sort(&ready_list, high_priority_condition, NULL);
+  old_level = intr_disable ();
 }
 
 void
