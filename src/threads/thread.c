@@ -732,12 +732,16 @@ void thread_wake_up(int64_t wakeup_at_tick) //This is called by the interrupt ha
 void
 thread_calculate_mlfqs_priority(struct thread* t, void *aux UNUSED)
 {
-    t->priority = PRI_MAX - CONVERT_FP_INT_FLOOR(DIV_FP_INT(t->recent_cpu, 4)) - t->nice*2;
-    // Adjust to lie in the range of max and min priorities
-    if(t->priority > PRI_MAX)
-      t->priority = PRI_MAX;
-    if(t->priority < PRI_MIN)
-      t->priority = PRI_MIN;
+  //priority = PRI_MAX - (recent_cpu / 4) - (nice * 2)
+  int priority;
+  priority = SUB_FP_FP(CONVERT_INT_FP(PRI_MAX), DIV_FP_INT(t->recent_cpu, 4));
+  priority =  SUB_FP_FP(priority, t->nice*2);
+  t->priority = CONVERT_FP_INT_FLOOR(priority);
+  // Adjust to lie in the range of max and min priorities
+  if(t->priority > PRI_MAX)
+    t->priority = PRI_MAX;
+  if(t->priority < PRI_MIN)
+    t->priority = PRI_MIN;
 }
 
 void
@@ -749,9 +753,9 @@ ready_list_sort(void){
 void
 thread_calculate_recent_cpu(struct thread *t, void *aux)
 {
-  // It is recommended to calculate the coefficient of recent_cpu first.
-  // You may get an overflow if you directly multiply load_avg with recent_cpu.
-  /* idle thread maintains recent_cpu  ??*/
+  // Calculate the coefficient of recent_cpu first, to avoid overflow.
+  // Then multiply load_avg with recent_cpu.
+  // recent_cpu=(2*load_avg)/(2*load_avg+1)*recent_cpu+nice
   int coeff;
   coeff = DIV_FP_FP(MULT_FP_INT(load_avg, 2),
             ADD_FP_INT(MULT_FP_INT(load_avg, 2), 1));
@@ -767,10 +771,14 @@ thread_inc_recent_cpu(struct thread *t)
 void
 thread_calculate_load_avg(void)
 {
+  // load_avg=(59/60)*load_avg+(1/60)*ready_threads
   int ready_threads = list_size(&ready_list);
-  // If thread is running, ready to run
+  // If thread is running, ready to run, blocked
   if(thread_current() != idle_thread)
     ready_threads++;
-  load_avg = MULT_FP_FP(DIV_INT_INT(59, 60), load_avg) + DIV_INT_INT(1,60) * ready_threads;
+  int avg1, avg2;
+  avg1 = MULT_FP_FP(DIV_INT_INT(59, 60), load_avg);
+  avg2 = DIV_INT_INT(ready_threads, 60);
+  load_avg = ADD_FP_FP(avg1, avg2);
 }
 //Added Functions End.
