@@ -379,23 +379,22 @@ thread_set_priority (int new_priority)
 
   //Added Code starts
   // Ignore if MLFQS
-  if (!thread_mlfqs)
-  {
-    struct thread *t = thread_current();
-    t->initial_priority = new_priority;
-    t->priority = new_priority;
+  if (thread_mlfqs)
+    return;
+  struct thread *t = thread_current();
+  t->initial_priority = new_priority;
+  t->priority = new_priority;
 
-    if (!list_empty(&ready_list) && t->status == THREAD_RUNNING) { //if thread is running
-      //Preempt Running thread if thread in ready queue has higher priority
-      if (list_entry(list_front(&ready_list), struct thread, elem)->priority > t->priority) 
-        thread_yield();
-    }
-    else if (t->status == THREAD_READY) //else if this thread is in ready queue.
-    {
-      /* Any Change in the order of the ready list due to Change in Priority */
-      list_remove(&t->elem);
-      list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
-    }
+  if (!list_empty(&ready_list) && t->status == THREAD_RUNNING) { //if thread is running
+    //Preempt Running thread if thread in ready queue has higher priority
+    if (list_entry(list_front(&ready_list), struct thread, elem)->priority > t->priority)
+      thread_yield();
+  }
+  else if (t->status == THREAD_READY) //else if this thread is in ready queue.
+  {
+    /* Any Change in the order of the ready list due to Change in Priority */
+    list_remove(&t->elem);
+    list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
   }
   //Added code ends
 }
@@ -422,15 +421,11 @@ thread_set_nice (int nice UNUSED)
   // Sort the list: Update current thread to correct location in ready list
   if (t->status == THREAD_READY)
   {
-    enum intr_level old_level;
-    old_level = intr_disable();
-    list_remove(&t->elem); //Remove from its prev loc
-    // Add it in ordered position
+    list_remove(&t->elem);
     list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
-    intr_set_level(old_level);
   }
   // If current threads priority is less than top of ready list(max priority)
-  // Then yeild
+  // Then yeild/preempt
   else if (!list_empty(&ready_list) && t->status == THREAD_RUNNING)
   {
     if(t->priority < list_entry(list_begin(&ready_list),
