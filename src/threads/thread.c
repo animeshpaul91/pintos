@@ -248,6 +248,7 @@ thread_create (const char *name, int priority,
     t->nice = 0; // Initialise threads nice
     t->recent_cpu = 0; // Initialise thread's recent_cpu
     thread_set_mlfqs_priority(t, NULL);
+    thread_update_priority_locs_and_yeild(t);
   }
 
   //New thread's priority is greater than calling threads priority
@@ -445,7 +446,6 @@ thread_set_nice (int nice UNUSED)
     return;
   struct thread* t = thread_current();
   t-> nice = nice;
-
   //Calculate priority
   thread_set_mlfqs_priority(t, NULL);
   thread_update_priority_locs_and_yeild(t);
@@ -761,19 +761,21 @@ thread_set_mlfqs_priority (struct thread* t, void *aux UNUSED)
   int priority;
   priority = SUB_FP_FP(CONVERT_INT_FP(PRI_MAX), DIV_FP_INT(t->recent_cpu, 4));
   priority =  SUB_FP_FP(priority, t->nice*2);
-  t->priority = CONVERT_FP_INT_FLOOR(priority);
-  if(t->priority > PRI_MAX)
-    t->priority = PRI_MAX;
-  if(t->priority < PRI_MIN)
-    t->priority = PRI_MIN;
+  priority = CONVERT_FP_INT_FLOOR(priority);
+  if(priority > PRI_MAX)
+    priority = PRI_MAX;
+  if(priority < PRI_MIN)
+    priority = PRI_MIN;
+  t->priority = priority;
 }
 
 void
 ready_list_sort (void){
   enum intr_level old_level;
+  old_level = intr_disable ();
   if(!list_empty(&ready_list))
     list_sort(&ready_list, high_priority_condition, NULL);
-  old_level = intr_disable ();
+  intr_set_level (old_level);
 }
 
 /* Calculate recent cpu using the equation of FP arithmetic
@@ -822,7 +824,9 @@ thread_calculate_load_avg (void)
 void
 thread_update_priority_locs_and_yeild(struct thread *t)
 {
-  // If thread is in ready state, it's assumed ready_list has at least one element
+  enum intr_level old_level;
+  old_level = intr_disable();
+  // If thread's in ready state, it's assumed ready_list has at least one thread
   if (t->status == THREAD_READY)
   {
     list_remove(&t->elem);
@@ -834,5 +838,6 @@ thread_update_priority_locs_and_yeild(struct thread *t)
                                 struct thread, elem) ->priority)
       thread_yield();
   }
+  intr_set_level(old_level);
 }
 //Added Functions End.
