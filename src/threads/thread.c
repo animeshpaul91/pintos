@@ -248,7 +248,6 @@ thread_create (const char *name, int priority,
     t->nice = 0; // Initialise threads nice
     t->recent_cpu = 0; // Initialise thread's recent_cpu
     thread_set_mlfqs_priority(t, NULL);
-    thread_update_priority_locs_and_yeild(t);
   }
 
   //New thread's priority is greater than calling threads priority
@@ -771,11 +770,8 @@ thread_set_mlfqs_priority (struct thread* t, void *aux UNUSED)
 
 void
 ready_list_sort (void){
-  enum intr_level old_level;
-  old_level = intr_disable ();
   if(!list_empty(&ready_list))
     list_sort(&ready_list, high_priority_condition, NULL);
-  intr_set_level (old_level);
 }
 
 /* Calculate recent cpu using the equation of FP arithmetic
@@ -783,7 +779,7 @@ ready_list_sort (void){
   hen multiply load_avg with recent_cpu.
   recent_cpu = (2*load_avg)/(2*load_avg+1)*recent_cpu+nice */
 void
-thread_calculate_recent_cpu (struct thread *t, void *aux)
+thread_calculate_recent_cpu (struct thread *t, void *aux UNUSED)
 {
   int coeff;
   coeff = DIV_FP_FP(MULT_FP_INT(load_avg, 2),
@@ -795,7 +791,7 @@ thread_calculate_recent_cpu (struct thread *t, void *aux)
 void
 thread_inc_recent_cpu (struct thread *t)
 {
-  ADD_FP_INT(t->recent_cpu, 1);
+  t->recent_cpu = ADD_FP_INT(t->recent_cpu, 1);
 }
 
 /* Calcualtes system's load avg using the equation involving FP arithmetic
@@ -822,7 +818,7 @@ thread_calculate_load_avg (void)
   with max priority, and if less, yield/preempt this running thread
   */
 void
-thread_update_priority_locs_and_yeild(struct thread *t)
+thread_update_priority_locs_and_yeild (struct thread *t)
 {
   enum intr_level old_level;
   old_level = intr_disable();
