@@ -410,6 +410,7 @@ bool cond_order_condition (const struct list_elem *first, const struct list_elem
   return (fir->t->priority > sec->t->priority);
 }
 
-bool lock_priority_compare(struct list_elem *lock_1, struct list_elem *lock_2) {
+bool 
+lock_priority_compare(struct list_elem *lock_1, struct list_elem *lock_2) {
 	return (list_entry(lock_1, struct lock, elem)->priority > list_entry(lock_2, struct lock, elem)->priority);
 }
