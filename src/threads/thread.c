@@ -416,7 +416,8 @@ thread_set_priority (int new_priority)
     return;
   struct thread *t = thread_current();
   t->initial_priority = new_priority;
-  t->priority = new_priority;
+  if (list_empty(&t->locks_held)) t->priority = new_priority;
+  //t->priority = new_priority;
   thread_update_priority_and_yeild(t);
   //Added code ends
 }
@@ -555,7 +556,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->wakeup_ticks = 0;
   t->initial_priority = priority;
   //Added Code Ends
-
+  list_init(&t->locks_held);
+  t->lock_waiting_for = NULL;
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);

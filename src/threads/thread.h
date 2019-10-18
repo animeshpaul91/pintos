@@ -92,10 +92,16 @@ struct thread
 
     //Added struct elements
     int64_t wakeup_ticks;               /* Wakeup timestamp for thread */
-    int initial_priority;               /* Initial Priority for Reverting Threads's original Priority */
+    int initial_priority;               /* Initial Priority for Reverting Threads's originnal Priority */
+
+    struct lock *lock_waiting_for; // the lock for which thread is waiting & At one point only one thread can be waited for by the lock
+    struct list locks_held;  // list of locks held by the thread
+    //End of Added Struct Elements 
+
     int nice;                           /* Niceness of a thread for re-prioritising*/
     int recent_cpu;                     /* Recent CPU value for the thread*/
     //End of Added Struct Elements
+    
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
