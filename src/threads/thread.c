@@ -154,7 +154,7 @@ thread_tick (void)
   /*
     - Recent cpu is incremented for only the running thread
     - Recent cpu is calculated for all threads every second (timer_ticks () % TIMER_FREQ == 0)
-    - Load avg is calculated every second
+    - Load avg is calculated every second (timer_ticks () % TIMER_FREQ == 0)
     - Thread priority is calculated for all threads every fourth  tick
   */
   if(thread_mlfqs == true)
@@ -759,7 +759,7 @@ thread_set_mlfqs_priority (struct thread* t, void *aux UNUSED)
 {
   int priority;
   priority = SUB_FP_FP(CONVERT_INT_FP(PRI_MAX), DIV_FP_INT(t->recent_cpu, 4));
-  priority =  SUB_FP_FP(priority, t->nice*2);
+  priority =  SUB_FP_INT(priority, t->nice*2);
   priority = CONVERT_FP_INT_FLOOR(priority);
   if(priority > PRI_MAX)
     priority = PRI_MAX;
