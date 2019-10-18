@@ -92,9 +92,10 @@ struct thread
 
     //Added struct elements
     int64_t wakeup_ticks;               /* Wakeup timestamp for thread */
-    int initial_priority;               /* Initial Priority for Reverting Threads's originnal Priority */
-    
-    //End of Added Struct Elements 
+    int initial_priority;               /* Initial Priority for Reverting Threads's original Priority */
+    int nice;                           /* Niceness of a thread for re-prioritising*/
+    int recent_cpu;                     /* Recent CPU value for the thread*/
+    //End of Added Struct Elements
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -149,5 +150,14 @@ bool less_wakeup_time(const struct list_elem *first, const struct list_elem *sec
 bool high_priority_condition(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED);
 void thread_sleep(int64_t);
 void thread_wake_up(int64_t);
+//Added functions for MLFQS
+void thread_update_priority_and_yeild(struct thread *);
+void thread_set_mlfqs_priority(struct thread *, void *aux UNUSED);
+void thread_sort_ready_list(void);
+void thread_calculate_recent_cpu(struct thread *, void *aux UNUSED);
+void thread_increment_recent_cpu(struct thread *);
+void thread_calculate_load_avg(void);
+
 //End
+
 #endif /* threads/thread.h */
