@@ -371,8 +371,7 @@ thread_set_priority (int new_priority)
   //Added Code starts
   struct thread *t = thread_current();
   t->initial_priority = new_priority;
-  if (list_empty(&t->locks_held))
-    t->priority = new_priority;
+  if (list_empty(&t->locks_held)) t->priority = new_priority;
 
   if (!list_empty(&ready_list) && t->status == THREAD_RUNNING) { //if this thread is running
     if (list_entry(list_front(&ready_list), struct thread, elem)->priority > t->priority) //Preempt Running thread if thread in ready queue has higher priority
