@@ -403,7 +403,8 @@ cond_broadcast (struct condition *cond, struct lock *lock) //Wakes up all thread
     cond_signal (cond, lock);
 }
 
-bool cond_order_condition (const struct list_elem *first, const struct list_elem *second, void *aux UNUSED)
+bool 
+cond_order_condition (const struct list_elem *first, const struct list_elem *second, void *aux UNUSED)
 {
   struct semaphore_elem *fir = list_entry(first, struct semaphore_elem, elem);
   struct semaphore_elem *sec = list_entry(second, struct semaphore_elem, elem);
