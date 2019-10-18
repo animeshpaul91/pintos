@@ -11,12 +11,13 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
-#include "devices/timer.h"
-#include "threads/fixed-point.h"
-
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
+//Added imports for MLFQS
+#include <fixed-point.h>
+#include "devices/timer.h"
+//Added code ended
 
 /* Random value for struct thread's `magic' member.
    Used to detect stack overflow.  See the big comment at the top

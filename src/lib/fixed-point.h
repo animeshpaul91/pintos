@@ -4,8 +4,8 @@ Floating pt operations are done by simulation using
 where P are digits before decimal pt & Q digits are after it.
 Implemented as MACROS for faster processing
 */
-#ifndef THREADS_FP_MATH_H
-#define THREADS_FP_MATH_H
+#ifndef FP_MATH_H
+#define FP_MATH_H
 
 /*Q, which is 2^14*/
 #define f 1 << (14)
