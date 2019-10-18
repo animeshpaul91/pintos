@@ -171,9 +171,10 @@ static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
-  //Added for Alarm Clock
+  //Added code for Alarm Clock
   thread_wake_up(timer_ticks());
   thread_tick ();
+  //Added code ends
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
