@@ -371,7 +371,7 @@ thread_set_priority (int new_priority)
   //Added Code starts
   struct thread *t = thread_current();
   t->initial_priority = new_priority;
-  if (list_empty(&t->locks_held)) /* Set new priority only if list_of_locks held is empty */
+  if (list_empty(&t->locks_held))
     t->priority = new_priority;
 
   if (!list_empty(&ready_list) && t->status == THREAD_RUNNING) { //if this thread is running
