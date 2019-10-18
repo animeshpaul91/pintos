@@ -151,11 +151,11 @@ bool high_priority_condition(const struct list_elem *first, const struct list_el
 void thread_sleep(int64_t);
 void thread_wake_up(int64_t);
 //Added functions for MLFQS
+void thread_update_priority_and_yeild(struct thread *);
 void thread_set_mlfqs_priority(struct thread *, void *aux UNUSED);
-void thread_update_priority_locs_and_yeild(struct thread *);
-void ready_list_sort(void);
+void thread_sort_ready_list(void);
 void thread_calculate_recent_cpu(struct thread *, void *aux UNUSED);
-void thread_inc_recent_cpu(struct thread *);
+void thread_increment_recent_cpu(struct thread *);
 void thread_calculate_load_avg(void);
 
 //End

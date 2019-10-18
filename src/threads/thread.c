@@ -12,7 +12,8 @@
 #include "threads/synch.h"
 #include "threads/vaddr.h"
 #include "devices/timer.h"
-#include "threads/fixed-point.h" 
+#include "threads/fixed-point.h"
+
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -157,7 +158,7 @@ thread_tick (void)
     - Load avg is calculated every second (timer_ticks () % TIMER_FREQ == 0)
     - Thread priority is calculated for all threads every fourth  tick
   */
-  if(thread_mlfqs == true)
+  if(thread_mlfqs)
   {
     if(timer_ticks() % TIMER_FREQ == 0)
     {
@@ -167,11 +168,11 @@ thread_tick (void)
     if(timer_ticks() % 4 == 0)
     {
       thread_foreach(thread_set_mlfqs_priority, NULL);
-      //This serial priority updates will leave the ready_list in unsorted manner.
-      ready_list_sort();
+      //This serial priority updates will leave the ready_list in an unsorted manner.
+      thread_sort_ready_list();
     }
     if(t->status == THREAD_RUNNING)
-      thread_inc_recent_cpu(thread_current());
+      thread_increment_recent_cpu(thread_current());
   }
 
   /* Enforce preemption. */
@@ -250,7 +251,7 @@ thread_create (const char *name, int priority,
     thread_set_mlfqs_priority(t, NULL);
   }
 
-  //New thread's priority is greater than calling threads priority
+  //New thread's priority is greater then calling threads priority
   if (t->priority > thread_get_priority())
     thread_yield();
   //Added Code ends   
@@ -415,18 +416,7 @@ thread_set_priority (int new_priority)
   struct thread *t = thread_current();
   t->initial_priority = new_priority;
   t->priority = new_priority;
-
-  if (!list_empty(&ready_list) && t->status == THREAD_RUNNING) { //if thread is running
-    //Preempt Running thread if thread in ready queue has higher priority
-    if (list_entry(list_front(&ready_list), struct thread, elem)->priority > t->priority)
-      thread_yield();
-  }
-  else if (t->status == THREAD_READY) //else if this thread is in ready queue.
-  {
-    /* Any Change in the order of the ready list due to Change in Priority */
-    list_remove(&t->elem);
-    list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
-  }
+  thread_update_priority_and_yeild(t);
   //Added code ends
 }
 
@@ -447,7 +437,7 @@ thread_set_nice (int nice UNUSED)
   t-> nice = nice;
   //Calculate priority
   thread_set_mlfqs_priority(t, NULL);
-  thread_update_priority_locs_and_yeild(t);
+  thread_update_priority_and_yeild(t);
 }
 
 /* Returns the current thread's nice value. */
@@ -729,7 +719,7 @@ thread_sleep (int64_t ticks)
   //Disabling interrupts before blocking current thread 
   old_level = intr_disable();
   thread_block(); //puts the thread to sleep.
-  intr_set_level(old_level);
+  intr_set_level(old_level); //Enabling interrups back to old level.
 }
 
 void
@@ -751,9 +741,31 @@ thread_wake_up (int64_t wakeup_at_tick) //This is called by the interrupt handle
   }
 }
 
+/* Updates the thread's location in the ready queue
+  by deleting the thread from it's original position in queue
+  and inserting it into it's new position using `list_insert_ordered` function.
+  If the thread is RUNNING, check with top of ready_list, which is thread
+  with max priority, and if less, yield/preempt this running thread */
+void
+thread_update_priority_and_yeild (struct thread *t)
+{
+  // If thread's in ready state, it's assumed ready_list has at least one thread
+  if (t->status == THREAD_READY)
+  {
+    list_remove(&t->elem);
+    list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
+  }
+  else if (!list_empty(&ready_list) && t->status == THREAD_RUNNING)
+  {
+    if (t->priority < list_entry(list_begin(&ready_list),
+                                struct thread, elem) ->priority)
+      thread_yield();
+  }
+}
+
 /* Calculates MLFQS priority using formula
-priority = PRI_MAX - (recent_cpu / 4) - (nice * 2)
-Adjusts the value to lie in between PRI_MAX and PRI_MIN*/
+  priority = PRI_MAX - (recent_cpu / 4) - (nice * 2)
+  Adjusts the value to lie in between PRI_MAX and PRI_MIN */
 void
 thread_set_mlfqs_priority (struct thread* t, void *aux UNUSED)
 {
@@ -768,13 +780,15 @@ thread_set_mlfqs_priority (struct thread* t, void *aux UNUSED)
   t->priority = priority;
 }
 
+/* Sorts the ready List according to priority,
+  only if ready list has some threads. */
 void
-ready_list_sort (void){
+thread_sort_ready_list (void){
   if(!list_empty(&ready_list))
     list_sort(&ready_list, high_priority_condition, NULL);
 }
 
-/* Calculate recent cpu using the equation of FP arithmetic
+/* Calculates recent cpu using the equation of FP arithmetic
   Recommended to calc the coefficient of recent_cpu first, to avoid overflow,
   hen multiply load_avg with recent_cpu.
   recent_cpu = (2*load_avg)/(2*load_avg+1)*recent_cpu+nice */
@@ -789,12 +803,12 @@ thread_calculate_recent_cpu (struct thread *t, void *aux UNUSED)
 
 /* Increments the value of recent_cpu using FP arithmetic*/
 void
-thread_inc_recent_cpu (struct thread *t)
+thread_increment_recent_cpu (struct thread *t)
 {
   t->recent_cpu = ADD_FP_INT(t->recent_cpu, 1);
 }
 
-/* Calcualtes system's load avg using the equation involving FP arithmetic
+/* Calculates system's load avg using the equation involving FP arithmetic
   load_avg=(59/60)*load_avg+(1/60)*ready_threads
   ready_thread is the count of threads which are running/ready/blocked
 */
@@ -809,31 +823,5 @@ thread_calculate_load_avg (void)
   avg1 = MULT_FP_FP(DIV_INT_INT(59, 60), load_avg);
   avg2 = DIV_INT_INT(ready_threads, 60);
   load_avg = ADD_FP_FP(avg1, avg2);
-}
-
-/* Updates the thread's location in the ready queue.
-  Deletes the thread from it's original position in queue
-  and inserts it into it's new position using `list_insert_ordered` function.
-  If the thread is RUNNING, check with top of ready_list, which is thread
-  with max priority, and if less, yield/preempt this running thread
-  */
-void
-thread_update_priority_locs_and_yeild (struct thread *t)
-{
-  enum intr_level old_level;
-  old_level = intr_disable();
-  // If thread's in ready state, it's assumed ready_list has at least one thread
-  if (t->status == THREAD_READY)
-  {
-    list_remove(&t->elem);
-    list_insert_ordered(&ready_list, &t->elem, high_priority_condition, NULL);
-  }
-  else if (!list_empty(&ready_list) && t->status == THREAD_RUNNING)
-  {
-    if (t->priority < list_entry(list_begin(&ready_list),
-                                struct thread, elem) ->priority)
-      thread_yield();
-  }
-  intr_set_level(old_level);
 }
 //Added Functions End.
