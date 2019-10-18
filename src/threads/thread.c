@@ -417,7 +417,7 @@ thread_set_priority (int new_priority)
   struct thread *t = thread_current();
   t->initial_priority = new_priority;
   if (list_empty(&t->locks_held)) t->priority = new_priority;
-  t->priority = new_priority;
+  //t->priority = new_priority;
   thread_update_priority_and_yeild(t);
   //Added code ends
 }
