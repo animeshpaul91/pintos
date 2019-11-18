@@ -555,9 +555,35 @@ init_thread (struct thread *t, const char *name, int priority)
   //Added Code Starts
   t->wakeup_ticks = 0;
   t->initial_priority = priority;
-  //Added Code Ends
   list_init(&t->locks_held);
   t->lock_waiting_for = NULL;
+
+  #ifdef USERPROG
+  t->exec_called = false;
+  t->exec_success = false;
+  t->parent_tid = (t != idle_thread && t != initial_thread) ? thread_current()->tid: -1;
+  list_init(&t->child_exit_status_list);
+  sema_init(&t->parent_sema, 0); //parent_sema has an initial value of 0.
+  t->exe_file = NULL;
+  list_init(&t->desc_file_map);
+  #endif
+
+  if (thread_mlfqs)
+  {
+    if (t == initial_thread)
+    {
+      t->nice = 0;
+      t->recent_cpu = 0;
+    }
+
+    else
+    {
+      t->nice = thread_get_nice();
+      t->recent_cpu = thread_get_recent_cpu();
+    }
+  }
+  //Added Code Ends
+
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
@@ -826,5 +852,17 @@ thread_calculate_load_avg (void)
   avg1 = MULT_FP_FP(DIV_INT_INT(59, 60), load_avg);
   avg2 = DIV_INT_INT(ready_threads, 60);
   load_avg = ADD_FP_FP(avg1, avg2);
+}
+
+struct thread *get_thread_with_tid(tid_t tid)
+{
+  if (tid == -1 || list_begin(&all_list) == list_end(&all_list))
+    return NULL;
+  struct list_elem *iter;
+  struct thread *t;
+  for (iter = list_begin(&all_list); iter != list_end(&all_list); iter = list_next(iter))
+    if (tid == list_entry(iter, struct thread, elem)->tid)
+      return t;
+  return NULL;
 }
 //Added Functions End.
