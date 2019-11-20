@@ -234,16 +234,16 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   //Added begins
-  int n = strlen(file_name) + 1;
-  char *save_ptr, *token = (char *)malloc(n);
-  strlcpy(token, file_name, n);
-  token = (char *)strtok_r((char *)file_name, " ", &save_ptr);
-  //Added ends
+  char *loc_of_space;
+  loc_of_space = strstr(file_name, " ");
+  if (!loc_of_space)
+    *loc_of_space = '\0';
 
   /* Open executable file. */
-  //file = filesys_open (file_name); Original code
-  file = filesys_open ((const char *)token);
-  free(token); //Added. Free allocated memory 
+  file = filesys_open (file_name);
+  
+  if(!loc_of_space)
+    *loc_of_space = ' ';
   
   if (file == NULL) 
     {
