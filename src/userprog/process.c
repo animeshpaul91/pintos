@@ -18,6 +18,9 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+//Added Header File
+#include "threads/malloc.h"
+
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
@@ -44,10 +47,15 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   //Added Code 
-  char *save_ptr;
-  file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
+  char *save_ptr, *t_name;
+  int n = strlen(file_name) + 1;
+  t_name = (const char *)malloc(n);
+  strlcpy(t_name, file_name, n);
+  t_name = (const char *)strtok_r((char *)t_name, " ", &save_ptr);
+  //tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy); Original Code
+  tid = thread_create (t_name, PRI_DEFAULT, start_process, fn_copy);
+  free(t_name);
   //Added Ends
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
