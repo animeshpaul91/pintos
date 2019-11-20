@@ -576,7 +576,7 @@ init_thread (struct thread *t, const char *name, int priority)
   #ifdef USERPROG
   t->parent = running_thread();
   sema_init(&t->parent_sema, 0);
-  //sema_init(&t->parent->parent_sema, 0);
+  sema_init(&t->parent->parent_sema, 0);
   #endif
   //Added Code Ends
 
