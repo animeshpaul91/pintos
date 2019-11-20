@@ -68,7 +68,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     }
     default:
-      //printf("error %d", (*(int*)f->esp)); 
+      printf("error %d", (*(int*)f->esp)); 
   }
 }
 
