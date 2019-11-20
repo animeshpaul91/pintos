@@ -529,7 +529,7 @@ static void initialize_stack(const char *file_name, void **esp)
 
   /* Pushing argv[argc -1] to argv[0] to Stack */
   i = argc - 1;
-  while (i >-1)
+  while (i > -1)
   {
     *esp -= w_size;
     memcpy(*esp, &argv[i], w_size);
