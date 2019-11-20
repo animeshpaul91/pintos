@@ -6,7 +6,13 @@
 
 //Added Header Files
 #include "threads/init.h"
-#include "threads/vaddr.h"
+#include "userprog/process.h" /* To invoke process_execute */
+#include "threads/malloc.h"   /* For malloc allocation */
+#include "devices/shutdown.h" /* For shutdown */
+#include "devices/input.h"    /* For Input */
+#include "filesys/file.h"     /* To allow file write */
+#include "filesys/filesys.h"  /* For file operations */
+#include "threads/vaddr.h"    /* For is_user_vaddr() */
 #include "userprog/pagedir.h"
 
 static void syscall_handler (struct intr_frame *);
