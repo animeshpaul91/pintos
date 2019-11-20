@@ -558,16 +558,6 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->locks_held);
   t->lock_waiting_for = NULL;
 
-  #ifdef USERPROG
-  t->exec_called = false;
-  t->exec_success = false;
-  t->parent_tid = (t != idle_thread && t != initial_thread) ? thread_current()->tid: -1;
-  list_init(&t->child_exit_status_list);
-  sema_init(&t->parent_sema, 0); //parent_sema has an initial value of 0.
-  t->exe_file = NULL;
-  list_init(&t->desc_file_map);
-  #endif
-
   if (thread_mlfqs)
   {
     if (t == initial_thread)
@@ -582,6 +572,12 @@ init_thread (struct thread *t, const char *name, int priority)
       t->recent_cpu = thread_get_recent_cpu();
     }
   }
+
+  #ifdef USERPROG
+  t->parent = running_thread();
+  sema_init(&t->parent_sema, 0);
+  sema_init(&t->parent->parent_sema, 0);
+  #endif
   //Added Code Ends
 
   old_level = intr_disable ();

@@ -21,6 +21,10 @@
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
+//Added prototype
+static void init_stack(void **esp, const char *file_name);
+//Ends
+
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
    before process_execute() returns.  Returns the new process's
@@ -39,6 +43,10 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
+  //Added Code 
+  char *save_ptr;
+  file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
+  //Added Ends
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
@@ -88,6 +96,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  sema_down(&thread_current()->parent_sema);
   return -1;
 }
 
@@ -221,8 +230,18 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
+  //Added
+  char *cmd_end;
+  cmd_end = strstr(file_name, " ");
+  if (cmd_end != NULL)
+    *cmd_end = '\0';
+
   /* Open executable file. */
   file = filesys_open (file_name);
+
+  if (cmd_end != NULL)
+    *cmd_end = ' ';
+  
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -304,6 +323,9 @@ load (const char *file_name, void (**eip) (void), void **esp)
   /* Set up stack. */
   if (!setup_stack (esp))
     goto done;
+
+  //Added
+  init_stack(esp, file_name);
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
@@ -462,4 +484,64 @@ install_page (void *upage, void *kpage, bool writable)
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
+}
+
+//Added
+static void init_stack(void **esp, const char *file_name)
+{
+  int argc=0, i, n_bytes;
+  char *token, *save_ptr;
+
+  //Word size is the size of the pointer vairables
+  int word_size = sizeof(char*);
+
+  /*The number of arguments can't exceed the 
+  number of addresses that can be stored in a page */
+  char **argv = palloc_get_page(0);
+  
+  //No space than the OS crashes
+  ASSERT(argv!=NULL);
+
+  //Add the arguments to the stack
+  for (argc = 0, token = strtok_r((char*)file_name, " ", &save_ptr); token != NULL;
+       i++, token = strtok_r(NULL, " ", &save_ptr), argc++)
+  {
+    n_bytes = strlen(token) + 1;
+    *esp -= n_bytes;
+    memcpy(*esp, token, n_bytes);
+    argv[argc] = *esp;
+  }
+
+  //Padding
+  n_bytes = word_size - ((size_t)*esp % word_size);
+  if(n_bytes>0){
+    *esp -= n_bytes;
+    memset(*esp, 0, n_bytes);
+  }
+
+  //Add Sentinel
+  *esp -= word_size;
+  memset(*esp,0, word_size);
+
+  for (i = argc - 1; i >-1; i--)
+  {
+    *esp -= word_size;
+    memcpy(*esp, &argv[i], word_size);
+  }
+
+  //Push address of argv
+  int addr = (int)*esp;
+  *esp -= word_size;
+  memcpy(*esp, &addr, word_size);
+
+  //Push argc
+  *esp -= word_size;
+  memcpy(*esp, &argc, word_size);
+
+  //Fake return address
+  *esp = *esp - word_size;
+  memset(*esp, 0, word_size);
+
+  //Free the page
+  palloc_free_page(argv);
 }
