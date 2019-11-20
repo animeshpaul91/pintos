@@ -25,7 +25,7 @@ static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
 //Added prototype
-static void initialize_stack(void **esp, const char *file_name);
+static void initialize_stack(const char *file_name, void **esp);
 //Ends
 
 /* Starts a new thread running a user program loaded from
@@ -465,7 +465,7 @@ setup_stack (void **esp, const char *file_name)
     }
 
   //Added Code
-  initialize_stack(esp, file_name); //Sets up Stack
+  initialize_stack(file_name, esp); //Sets up Stack
   return success;
 }
 
@@ -490,61 +490,58 @@ install_page (void *upage, void *kpage, bool writable)
 }
 
 //Added
-static void initialize_stack(void **esp, const char *file_name)
+static void initialize_stack(const char *file_name, void **esp)
 {
-  int argc=0, i, n_bytes;
-  char *token, *save_ptr;
+  char *token, *save_ptr, **argv;
+  int i, w_size, num_of_bytes, argc, base_addr;
 
-  //Word size is the size of the pointer vairables
-  int word_size = sizeof(char*);
+  w_size = sizeof(char *); /* Size of Pointer */
+  argv = palloc_get_page(0); /* Ensure that # of args does not exceed # of addresses in a page */
 
-  /*The number of arguments can't exceed the 
-  number of addresses that can be stored in a page */
-  char **argv = palloc_get_page(0);
-  
-  //No space than the OS crashes
-  ASSERT(argv!=NULL);
+  ASSERT(argv != NULL);
 
-  //Add the arguments to the stack
-  for (argc = 0, token = strtok_r((char*)file_name, " ", &save_ptr); token != NULL;
-       i++, token = strtok_r(NULL, " ", &save_ptr), argc++)
+  /* Adding the Arguments to Stack */
+  for (argc = 0, token = strtok_r((char*)file_name, " ", &save_ptr); token != NULL; i++, token = strtok_r(NULL, " ", &save_ptr), argc++)
   {
-    n_bytes = strlen(token) + 1;
-    *esp -= n_bytes;
-    memcpy(*esp, token, n_bytes);
+    num_of_bytes = strlen(token) + 1;
+    *esp -= num_of_bytes;
+    memcpy(*esp, token, num_of_bytes);
     argv[argc] = *esp;
   }
 
-  //Padding
-  n_bytes = word_size - ((size_t)*esp % word_size);
-  if(n_bytes>0){
-    *esp -= n_bytes;
-    memset(*esp, 0, n_bytes);
+  /* The Last byte might need padding */
+  num_of_bytes = w_size - ((size_t) *esp % w_size);
+
+  if(num_of_bytes > 0)
+  {
+    *esp -= num_of_bytes;
+    memset(*esp, 0, num_of_bytes);
   }
 
-  //Add Sentinel
-  *esp -= word_size;
-  memset(*esp,0, word_size);
+  /* Pushing Sentinel */
+  *esp -= w_size;
+  memset(*esp, 0, w_size);
 
+  /* Pushing argv[argc -1] to argv[0] to Stack */
   for (i = argc - 1; i >-1; i--)
   {
-    *esp -= word_size;
-    memcpy(*esp, &argv[i], word_size);
+    *esp -= w_size;
+    memcpy(*esp, &argv[i], w_size);
   }
 
-  //Push address of argv
-  int addr = (int)*esp;
-  *esp -= word_size;
-  memcpy(*esp, &addr, word_size);
+  /* Pushing address of argv */
+  base_addr = (int) *esp;
+  *esp -= w_size;
+  memcpy(*esp, &base_addr, w_size);
 
-  //Push argc
-  *esp -= word_size;
-  memcpy(*esp, &argc, word_size);
+  /* Pushing address of argc */
+  *esp -= w_size;
+  memcpy(*esp, &argc, w_size);
 
-  //Fake return address
-  *esp = *esp - word_size;
-  memset(*esp, 0, word_size);
+  /* Pushing Fake Return Address */
+  *esp -= w_size;
+  memset(*esp, 0, w_size);
 
-  //Free the page
+  /* Free page */
   palloc_free_page(argv);
 }
