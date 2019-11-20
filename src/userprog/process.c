@@ -25,7 +25,7 @@ static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
 //Added prototype
-static void init_stack(void **esp, const char *file_name);
+static void initialize_stack(void **esp, const char *file_name);
 //Ends
 
 /* Starts a new thread running a user program loaded from
@@ -207,7 +207,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (void **esp, const char *);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -324,11 +324,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (esp, file_name))
     goto done;
-
-  //Added
-  init_stack(esp, file_name);
 
   /* Start address. */
   *eip = (void (*) (void)) ehdr.e_entry;
@@ -452,7 +449,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (void **esp, const char *file_name) 
 {
   uint8_t *kpage;
   bool success = false;
@@ -466,6 +463,9 @@ setup_stack (void **esp)
       else
         palloc_free_page (kpage);
     }
+
+  //Added Code
+  initialize_stack(esp, file_name); //Sets up Stack
   return success;
 }
 
@@ -490,7 +490,7 @@ install_page (void *upage, void *kpage, bool writable)
 }
 
 //Added
-static void init_stack(void **esp, const char *file_name)
+static void initialize_stack(void **esp, const char *file_name)
 {
   int argc=0, i, n_bytes;
   char *token, *save_ptr;
