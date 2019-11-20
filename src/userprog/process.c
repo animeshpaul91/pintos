@@ -501,12 +501,17 @@ static void initialize_stack(const char *file_name, void **esp)
   ASSERT(argv != NULL);
 
   /* Adding the Arguments to Stack */
-  for (argc = 0, token = strtok_r((char*)file_name, " ", &save_ptr); token != NULL; i++, token = strtok_r(NULL, " ", &save_ptr), argc++)
+  argc = 0;
+  token = strtok_r((char*)file_name, " ", &save_ptr);
+
+  while (token != NULL)
   {
     num_of_bytes = strlen(token) + 1;
     *esp -= num_of_bytes;
     memcpy(*esp, token, num_of_bytes);
     argv[argc] = *esp;
+    token = strtok_r(NULL, " ", &save_ptr);
+    argc++;
   }
 
   /* The Last byte might need padding */
@@ -523,10 +528,12 @@ static void initialize_stack(const char *file_name, void **esp)
   memset(*esp, 0, w_size);
 
   /* Pushing argv[argc -1] to argv[0] to Stack */
-  for (i = argc - 1; i >-1; i--)
+  i = argc - 1;
+  while (i >-1)
   {
     *esp -= w_size;
     memcpy(*esp, &argv[i], w_size);
+    i--;
   }
 
   /* Pushing address of argv */
