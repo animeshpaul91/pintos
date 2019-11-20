@@ -49,7 +49,7 @@ process_execute (const char *file_name)
   //Added Code 
   char *save_ptr, *t_name;
   int n = strlen(file_name) + 1;
-  t_name = (const char *)malloc(n);
+  t_name = (char *)malloc(n);
   strlcpy(t_name, file_name, n);
   t_name = (const char *)strtok_r((char *)t_name, " ", &save_ptr);
   //tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy); Original Code
