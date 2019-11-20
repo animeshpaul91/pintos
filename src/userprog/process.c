@@ -236,13 +236,13 @@ load (const char *file_name, void (**eip) (void), void **esp)
   //Added begins
   char *loc_of_space;
   loc_of_space = strstr(file_name, " ");
-  if (!loc_of_space)
+  if (loc_of_space != NULL)
     *loc_of_space = '\0';
 
   /* Open executable file. */
   file = filesys_open (file_name);
   
-  if(!loc_of_space)
+  if(loc_of_space != NULL)
     *loc_of_space = ' ';
   
   if (file == NULL) 
