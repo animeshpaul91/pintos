@@ -82,7 +82,7 @@ void exit(int status){
 void validate_address(void *address)
 {
   // check if the pointer is within PHYS_BASE
-  if(is_user_vaddr(address) == NULL)
+  if(!is_user_vaddr(address))
   {
     exit(-1);
   }
