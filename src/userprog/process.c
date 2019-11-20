@@ -47,15 +47,10 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   //Added Code 
-  char *save_ptr, *t_name;
-  int n = strlen(file_name) + 1;
-  t_name = (char *)malloc(n);
-  strlcpy(t_name, file_name, n);
-  t_name = (char *)strtok_r((char *)t_name, " ", &save_ptr);
-  //tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy); Original Code
-  tid = thread_create (t_name, PRI_DEFAULT, start_process, fn_copy);
-  free(t_name);
+  char *save_ptr;
+  file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
   //Added Ends
+  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -238,17 +233,18 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
-  //Added
-  char *cmd_end;
-  cmd_end = strstr(file_name, " ");
-  if (cmd_end != NULL)
-    *cmd_end = '\0';
+  //Added begins
+  char *save_ptr;
+  int n = strlen(file_name) + 1;
+  const char *token = (char *)malloc(n);
+  strlcpy(token, file_name, n);
+  token = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
+  //Added ends
 
   /* Open executable file. */
-  file = filesys_open (file_name);
-
-  if (cmd_end != NULL)
-    *cmd_end = ' ';
+  //file = filesys_open (file_name); Original code
+  file = filesys_open (token);
+  free(token); //Added. Free allocated memory 
   
   if (file == NULL) 
     {
