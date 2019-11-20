@@ -29,7 +29,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 {
   //printf ("system call!\n");
   //thread_exit ();
-  printf("value : %d\n", *(int*)f->esp);
+  //printf("value : %d\n", *(int*)f->esp);
   validate_address(f->esp);
   switch(*(int*)f->esp)
   {
@@ -68,7 +68,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     }
     default:
-      printf("error %d", (*(int*)f->esp)); 
+      //printf("error %d", (*(int*)f->esp)); 
   }
 }
 
