@@ -56,16 +56,25 @@ syscall_handler (struct intr_frame *f UNUSED)
       halt();
       break;
     }
-    case SYS_WRITE:
-    {
-      f->eax = write(*(sp + 1), (void *)*(sp + 2), *(sp + 3));
-      break;
-    }
+    
     case SYS_EXIT:
     {
       exit(*(sp + 1));
       break;
     }
+    
+    case SYS_EXEC:
+    {
+      f->eax = exec((const char *) *(sp + 1));
+      break;
+    }
+
+    case SYS_WRITE:
+    {
+      f->eax = write(*(sp + 1), (void *)*(sp + 2), *(sp + 3));
+      break;
+    }
+
     default:
       printf("error %d", (*(int*)f->esp)); 
   }
@@ -101,7 +110,7 @@ void exit(int status)
     exiting_child = (struct child_exit_status *)malloc(sizeof(struct child_exit_status));
     exiting_child->tid = curr->tid;
     exiting_child->exit_status = status;
-    list_push_back(&parent->child_list);
+    list_push_back(&parent->child_list, &exiting_child->elem);
 
     if (!parent->exec_called)
       sema_up(&curr->parent->parent_sema);
