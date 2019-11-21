@@ -335,6 +335,16 @@ load (const char *file_name, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+
+  //Added Code Starts
+  t = t->parent;
+  if (t->exec_called && t != NULL)
+  {
+    t->exec_success = success;
+    sema_up(&t->parent_sema);
+  }
+  //Added code ends
+  
   return success;
 }
 

@@ -15,19 +15,10 @@
 #include "threads/vaddr.h"    /* For is_user_vaddr() */
 #include "userprog/pagedir.h"
 
-//Added File Descriptor Mapper begins
-typedef struct file_des_mapper
-{
-    int fd;
-    struct file *f;
-    struct list_elem elem;
-} map;
-//Added Ends
-
 //Added Prototypes Begin (13 System Calls)
 static void halt(void);
-/*static pid_t exec(const char *);
-static int wait(pid_t);
+static pid_t exec(const char *);
+/* static int wait(pid_t);
 static bool create(const char *, unsigned);
 static bool remove(const char *);
 static int open(const char *);
@@ -38,9 +29,11 @@ static int write(int, void *, unsigned);
 static unsigned tell(int);
 static void close(int);*/
 //Added Prototypes End
-//Other helper functions
+
+//Other helper functions start
 static void safe_mem_access(int *);
 static bool validate_address(void *);
+//Other helper functions ends
 
 static void syscall_handler (struct intr_frame *);
 
@@ -65,7 +58,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
     case SYS_WRITE:
     {
-      f->eax = write(*(sp + 1), (char *)*(sp + 2), *(sp + 3));
+      f->eax = write(*(sp + 1), (void *)*(sp + 2), *(sp + 3));
       break;
     }
     case SYS_EXIT:
@@ -94,10 +87,48 @@ static void safe_mem_access(int *sp)
 
 void exit(int status)
 {
-  thread_current()->error_status = status;
-  printf("%s: exit(%d)\n", thread_current()->name, status);
-  sema_up(&thread_current()->parent->parent_sema);
-  thread_exit();  
+  struct thread *curr = thread_current();
+  struct thread *parent = curr->parent;
+  struct child_exit_status *exiting_child;
+  struct file_desc_mapper *fdmap;
+  struct list_elem *l;
+  struct list my_child_list = curr->child_list, desc_list = curr->desc_map_list;
+
+  printf("%s: exit(%d)\n", curr->name, status);
+
+  if (parent != NULL)
+  {
+    exiting_child = (struct child_exit_status *)malloc(sizeof(struct child_exit_status));
+    exiting_child->tid = curr->tid;
+    exiting_child->exit_status = status;
+    list_push_back(&parent->child_list);
+
+    if (!parent->exec_called)
+      sema_up(&curr->parent->parent_sema);
+  }
+
+  /* Close all file descriptors of the exiting process */
+  do 
+  {
+    l = list_pop_front(&desc_list);
+    fdmap = list_entry(l, struct file_desc_mapper, elem);
+    file_close(fdmap->exe);
+    free(fdmap);
+  } while(!list_empty(&desc_list));
+
+  /* Free all memory allocated to dead children */
+  do
+  {
+    l = list_pop_front(&my_child_list);
+    exiting_child = list_entry(l, struct child_exit_status, elem);
+    free(exiting_child);
+  } while (!list_empty(&my_child_list));
+  
+  /* Close file if open */
+  if (curr->exe)
+    file_close(curr->exe);
+  
+  thread_exit();
 }
 
 static void halt(void)
@@ -105,18 +136,18 @@ static void halt(void)
   shutdown_power_off();
 }
 
-/*static pid_t exec(const char *file)
+static pid_t exec(const char *file)
 {
-  pid_t pid = -1;
   if (!validate_address((void *)file))
     exit(-1);
+  pid_t pid = -1;
   struct thread *curr = thread_current();
   curr->exec_called = true;
   pid = process_execute(file); //this will call a sema_up() on load() increasing the initial value of 0 to 1.
   sema_down(&curr->parent_sema);
   curr->exec_called = false;
-  return ((curr->exec_success)? pid: -1);
-}*/
+  return ((curr->exec_success) ? pid: -1);
+}
 
 /*static int wait(pid_t pid)
 {
