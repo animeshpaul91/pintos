@@ -138,9 +138,9 @@ process_wait (tid_t child_tid UNUSED)
     sema_down(&p_thread->parent_sema);
   }
   //If the thread has already terminated and is a child
-  if (!list_empty(&p_thread->child_status_list))
+  if (!list_empty(&p_thread->child_list))
   {
-    for (struct list_elem *l = list_begin(&p_thread->child_status_list); l != list_end(&p_thread->child_status_list); l = list_next(l))
+    for (struct list_elem *l = list_begin(&p_thread->child_list); l != list_end(&p_thread->child_list); l = list_next(l))
     {
       ces = list_entry(l, struct child_exit_status, elem);
       if (child_tid == ces->tid)
