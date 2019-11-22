@@ -106,7 +106,7 @@ process_wait (tid_t child_tid UNUSED)
   int status = -1;
 
   if (child != NULL && child->parent == parent) { //If child is found and parent is the calling thread 
-    printf("%s has to wait for tid=%d\n",p_thread->name ,child_tid);
+    printf("%s has to wait for tid=%d\n",parent->name ,child_tid);
     sema_down(&parent->parent_sema);
   }
 
