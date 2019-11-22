@@ -132,7 +132,7 @@ process_wait (tid_t child_tid UNUSED)
 
   // printf("%s has to wait for tid=%d\n",p_thread->name ,child_tid);
   //If child found and parent is caller, wait
-  if (c_thread != NULL && c_thread->parent->tid == p_thread->tid)
+  /*if (c_thread != NULL && c_thread->parent->tid == p_thread->tid)
   {
     // printf("Waiting for child_tid %d \n", child_tid);
     sema_down(&p_thread->parent_sema);
@@ -156,7 +156,9 @@ process_wait (tid_t child_tid UNUSED)
   }
   // printf("Status is %d\n",status);
   //TODO free CES
-  return status;
+  return status; */
+   sema_down(&thread_current()->parent_sema);
+  return -1;
 }
 
 /* Free the current process's resources. */
