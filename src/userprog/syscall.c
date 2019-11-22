@@ -18,8 +18,8 @@
 //Added Prototypes Begin (13 System Calls)
 static void halt(void);
 static pid_t exec(const char *);
-/* static int wait(pid_t);
-static bool create(const char *, unsigned);
+static int wait(pid_t);
+/* static bool create(const char *, unsigned);
 static bool remove(const char *);
 static int open(const char *);
 static int filesize(int);
@@ -66,6 +66,12 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_EXEC:
     {
       f->eax = exec((const char *) *(sp + 1));
+      break;
+    }
+
+    case SYS_WAIT:
+    {
+      f->eax = wait(*(sp + 1));
       break;
     }
 
@@ -158,12 +164,12 @@ static pid_t exec(const char *file)
   return ((curr->exec_success) ? pid: -1);
 }
 
-/*static int wait(pid_t pid)
+static int wait(pid_t pid)
 {
   return (process_wait(pid));
 }
 
-static bool create(const char *file, unsigned initial_size)
+/* static bool create(const char *file, unsigned initial_size)
 {
   return true;
 }

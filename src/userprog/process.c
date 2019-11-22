@@ -102,9 +102,8 @@ int
 process_wait (tid_t child_tid UNUSED) 
 {
   struct thread *parent = thread_current(), *child = get_thread_with_tid(child_tid);
-  struct child_exit_status *exiting_child = NULL;
+  struct child_exit_status *exiting_child;
   struct list_elem *l;
-  //struct list my_child_list = parent->child_list;
   int status = -1;
 
   if (child != NULL && child->parent == parent) //If child is found and parent is the calling thread 
@@ -127,33 +126,6 @@ process_wait (tid_t child_tid UNUSED)
     }
   }
   return status;
-
-  /* struct thread *c_thread = get_thread_with_tid(child_tid), *p_thread = thread_current();
-  struct child_exit_status *ces = NULL;
-  int status = -1;
-
-  if (c_thread != NULL && c_thread->parent == p_thread)
-  {
-    sema_down(&p_thread->parent_sema);
-  }
-  
-  if (!list_empty(&p_thread->child_list))
-  {
-    for (struct list_elem *l = list_begin(&p_thread->child_list); l != list_end(&p_thread->child_list); l = list_next(l))
-    {
-      ces = list_entry(l, struct child_exit_status, elem);
-      if (child_tid == ces->tid)
-        break;
-    }
-    
-    if (ces->tid == child_tid)
-    {
-      status = ces->exit_status;
-      list_remove(&ces->elem);
-      free(ces);
-    }
-  }
-  return status; */
 }
 
 /* Free the current process's resources. */
