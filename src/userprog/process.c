@@ -105,8 +105,12 @@ process_wait (tid_t child_tid UNUSED)
   struct list my_child_list = parent->child_list;
   int status = -1;
 
-  if (child != NULL && child->parent == parent)  //If child is found and parent is the calling thread 
+  if (child != NULL && child->parent == parent) { //If child is found and parent is the calling thread 
+    printf("%s has to wait for tid=%d\n",p_thread->name ,child_tid);
     sema_down(&parent->parent_sema);
+  }
+
+  printf("%ld", list_size(&my_child_list));
   
   if (!list_empty(&my_child_list))  //Iterate through Parent's dead children 
   {
@@ -132,7 +136,7 @@ process_wait (tid_t child_tid UNUSED)
 
   // printf("%s has to wait for tid=%d\n",p_thread->name ,child_tid);
   //If child found and parent is caller, wait
-  /*if (c_thread != NULL && c_thread->parent->tid == p_thread->tid)
+  if (c_thread != NULL && c_thread->parent->tid == p_thread->tid)
   {
     // printf("Waiting for child_tid %d \n", child_tid);
     sema_down(&p_thread->parent_sema);
