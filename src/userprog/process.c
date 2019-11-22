@@ -35,7 +35,6 @@ static void initialize_stack(const char *file_name, void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
-  //printf("\n Entered process_execute");
   char *fn_copy;
   tid_t tid;
 
@@ -47,16 +46,15 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
+  
   //Added Code 
   char *save_ptr;
   file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
   //Added Ends
-  //printf("\n Before Thread Create");
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
-  //printf("\nReturned TID");
+  
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
-  //printf("\n Exited process_execute");
   return tid;
 }
 
@@ -103,19 +101,19 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  //printf("\nEntered Process Wait\n");
-  struct thread *parent = thread_current(), *child = get_thread_with_tid(child_tid);
+  printf("\nEntered Process Wait\n");
+  printf("%s has to wait for tid = %d\n",parent->name ,child_tid);
+  struct thread *parent = thread_current();
   struct child_exit_status *exiting_child = NULL;
   struct list_elem *l;
   struct list my_child_list = parent->child_list;
+  printf("\nMy Child List Size is: %d\n", list_size(&my_child_list));
   int status = -1;
 
-  if (child != NULL && child->parent == parent) { //If child is found and parent is the calling thread 
-    //printf("%s has to wait for tid=%d\n",parent->name ,child_tid);
-    sema_down(&parent->parent_sema);
-  }
+  struct thread *child = get_thread_with_tid(child_tid);
 
-  //printf("\n\n%d\n\n", list_size(&my_child_list));
+  if (child != NULL && child->parent == parent) //If child is found and parent is the calling thread 
+    sema_down(&parent->parent_sema);
   
   if (!list_empty(&my_child_list))  //Iterate through Parent's dead children 
   {
