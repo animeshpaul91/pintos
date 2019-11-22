@@ -103,13 +103,12 @@ process_wait (tid_t child_tid UNUSED)
 {
   printf("\nEntered Process Wait\n");
   struct thread *parent = thread_current(), *child = get_thread_with_tid(child_tid);
-  printf("%s has to wait for tid = %d\n",parent->name ,child_tid);
+  printf("\n%s has to wait for tid = %d\n",parent->name ,child_tid);
   struct child_exit_status *exiting_child = NULL;
   struct list_elem *l;
-  printf("\n Testing 1\n");
+  printf("\nTesting 1\n");
   struct list my_child_list = parent->child_list;
   printf("\nTesting 2\n");
-  printf("\nMy Child List Size is: %d\n", list_size(&my_child_list));
   int status = -1;
 
   //struct thread *child = get_thread_with_tid(child_tid);
