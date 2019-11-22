@@ -101,7 +101,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  printf("\nEntered Process Wait\n");
+  /* printf("\nEntered Process Wait\n");
   struct thread *parent = thread_current(), *child = get_thread_with_tid(child_tid);
   printf("\n%s has to wait for tid = %d\n",parent->name ,child_tid);
   struct child_exit_status *exiting_child = NULL;
@@ -110,8 +110,6 @@ process_wait (tid_t child_tid UNUSED)
   struct list my_child_list = parent->child_list;
   printf("\nTesting 2\n");
   int status = -1;
-
-  //struct thread *child = get_thread_with_tid(child_tid);
 
   if (child != NULL && child->parent == parent) //If child is found and parent is the calling thread 
     sema_down(&parent->parent_sema);
@@ -132,6 +130,39 @@ process_wait (tid_t child_tid UNUSED)
       free(exiting_child);
     }
   }
+  return status; */
+
+  //Added
+  struct thread *c_thread = get_thread_with_tid(child_tid), *p_thread = thread_current();
+  struct child_exit_status *ces = NULL;
+  int status = -1;
+
+  // printf("%s has to wait for tid=%d\n",p_thread->name ,child_tid);
+  //If child found and parent is caller, wait
+  if (c_thread != NULL && c_thread->parent == p_thread)
+  {
+    // printf("Waiting for child_tid %d \n", child_tid);
+    sema_down(&p_thread->parent_sema);
+  }
+  //If the thread has already terminated and is a child
+  if (!list_empty(&p_thread->child_list))
+  {
+    for (struct list_elem *l = list_begin(&p_thread->child_list); l != list_end(&p_thread->child_list); l = list_next(l))
+    {
+      ces = list_entry(l, struct child_exit_status, elem);
+      if (child_tid == ces->tid)
+        break;
+    }
+    //If child was found, read it and remove from the list
+    if (ces->tid == child_tid)
+    {
+      status = ces->exit_status;
+      list_remove(&ces->elem);
+      free(ces);
+    }
+  }
+  // printf("Status is %d\n",status);
+  //TODO free CES
   return status;
 }
 
