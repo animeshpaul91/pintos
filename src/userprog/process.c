@@ -99,8 +99,32 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  sema_down(&thread_current()->parent_sema);
-  return -1;
+  struct thread *parent = thread_current(), *child = get_thread_with_tid(child_tid);
+  struct child_exit_status *exiting_child = NULL;
+  struct list_elem *l;
+  struct list my_child_list = parent->child_list;
+  int status = -1;
+
+  if (child != NULL && child->parent == parent) /* If child is found and parent is the calling thread */ 
+    sema_down(&parent->parent_sema);
+  
+  if (!list_empty(&my_child_list)) /* Iterate through Parent's dead children */
+  {
+    for (l = list_begin(&my_child_list); l != list_end(&my_child_list); l = list_next(l))
+    {
+      exiting_child = list_entry(l, struct child_exit_status, elem);
+      if (child_tid == exiting_child->tid)
+        break;
+    }
+
+    if (child_tid == exiting_child->tid)
+    {
+      status = exiting_child->status;
+      list_remove(&exiting_child->elem);
+      free(exiting_child);
+    }
+  }
+  return status;
 }
 
 /* Free the current process's resources. */
