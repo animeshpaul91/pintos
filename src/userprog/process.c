@@ -35,6 +35,7 @@ static void initialize_stack(const char *file_name, void **esp);
 tid_t
 process_execute (const char *file_name) 
 {
+  printf("\n Entered process_execute");
   char *fn_copy;
   tid_t tid;
 
@@ -50,9 +51,12 @@ process_execute (const char *file_name)
   char *save_ptr;
   file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
   //Added Ends
+  printf("\n Before Thread Create");
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  printf("\nReturned TID");
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
+  printf("\n Exited process_execute");
   return tid;
 }
 
