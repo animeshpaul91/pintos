@@ -65,6 +65,7 @@ process_execute (const char *file_name)
 static void
 start_process (void *file_name_)
 {
+  printf("\n");
   char *file_name = file_name_;
   struct intr_frame if_;
   bool success;
@@ -103,6 +104,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  printf("\nEntered Process Wait\n");
   struct thread *parent = thread_current(), *child = get_thread_with_tid(child_tid);
   struct child_exit_status *exiting_child = NULL;
   struct list_elem *l;
