@@ -863,7 +863,6 @@ struct thread *get_thread_with_tid(tid_t tid)
   for (iter = list_begin(&all_list); iter != list_end(&all_list); iter = list_next(iter))
   {
     t = list_entry(iter, struct thread, allelem);
-    printf("\nCurrent Thread Name is: %s", t->name);
     if (t->tid == tid)
       return t;
   }
