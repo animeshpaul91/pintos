@@ -110,7 +110,7 @@ process_wait (tid_t child_tid UNUSED)
     sema_down(&parent->parent_sema);
   }
 
-  printf("%d", list_size(&my_child_list));
+  printf("\n\n%d\n\n", list_size(&my_child_list));
   
   if (!list_empty(&my_child_list))  //Iterate through Parent's dead children 
   {
