@@ -119,7 +119,7 @@ process_wait (tid_t child_tid UNUSED)
 
     if (child_tid == exiting_child->tid)
     {
-      status = exiting_child->status;
+      status = exiting_child->exit_status;
       list_remove(&exiting_child->elem);
       free(exiting_child);
     }
