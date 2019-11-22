@@ -102,7 +102,7 @@ int
 process_wait (tid_t child_tid UNUSED) 
 {
   struct thread *parent = thread_current(), *child = get_thread_with_tid(child_tid);
-  struct child_exit_status *exiting_child;
+  struct child_exit_status *exiting_child = NULL;
   struct list_elem *l;
   int status = -1;
 
