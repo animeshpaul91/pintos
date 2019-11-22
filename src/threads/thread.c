@@ -856,13 +856,16 @@ thread_calculate_load_avg (void)
 
 struct thread *get_thread_with_tid(tid_t tid)
 {
-  if (tid == -1 || list_begin(&all_list) == list_end(&all_list))
-    return NULL;
   struct list_elem *iter;
   struct thread *t;
+  if (list_begin(&all_list) == list_end(&all_list) || tid == -1)
+    return NULL;
   for (iter = list_begin(&all_list); iter != list_end(&all_list); iter = list_next(iter))
-    if (tid == list_entry(iter, struct thread, elem)->tid)
+  {
+    t = list_entry(iter, struct thread, allelem);
+    if (t->tid == tid)
       return t;
+  }
   return NULL;
 }
 //Added Functions End.
