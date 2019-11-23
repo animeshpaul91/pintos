@@ -111,11 +111,14 @@ process_wait (tid_t child_tid UNUSED)
   
   if (list_empty(&parent->child_list))  //Iterate through Parent's dead children 
     return status;
-  for (l = list_begin(&parent->child_list); l != list_end(&parent->child_list); l = list_next(l))
+
+  l = list_begin(&parent->child_list);
+  while (l != list_end(&parent->child_list))
   {
     exiting_child = list_entry(l, struct child_exit_status, elem);
     if (child_tid == exiting_child->tid)
       break;
+    l = list_next(l);
   }
 
   if (child_tid == exiting_child->tid)
