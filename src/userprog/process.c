@@ -109,21 +109,20 @@ process_wait (tid_t child_tid UNUSED)
   if (child != NULL && child->parent == parent) //If child is found and parent is the calling thread 
     sema_down(&parent->parent_sema);
   
-  if (!list_empty(&parent->child_list))  //Iterate through Parent's dead children 
+  if (list_empty(&parent->child_list))  //Iterate through Parent's dead children 
+    return status;
+  for (l = list_begin(&parent->child_list); l != list_end(&parent->child_list); l = list_next(l))
   {
-    for (l = list_begin(&parent->child_list); l != list_end(&parent->child_list); l = list_next(l))
-    {
-      exiting_child = list_entry(l, struct child_exit_status, elem);
-      if (child_tid == exiting_child->tid)
-        break;
-    }
-
+    exiting_child = list_entry(l, struct child_exit_status, elem);
     if (child_tid == exiting_child->tid)
-    {
-      status = exiting_child->exit_status;
-      list_remove(&exiting_child->elem);
-      free(exiting_child);
-    }
+      break;
+  }
+
+  if (child_tid == exiting_child->tid)
+  {
+    status = exiting_child->exit_status;
+    list_remove(&exiting_child->elem);
+    free(exiting_child);
   }
   return status;
 }
