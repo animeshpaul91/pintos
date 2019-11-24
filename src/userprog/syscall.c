@@ -125,9 +125,8 @@ void exit(int status)
   struct thread *curr = thread_current();
   struct thread *parent = curr->parent;
   struct child_exit_status *exiting_child;
-  //struct file_desc_mapper *fdmap;
-  //struct list_elem *l;
-  //struct list my_child_list = curr->child_list, desc_list = curr->file_desc_list;
+  struct file_desc_mapper *fdmap = NULL;
+  struct list_elem *l;
 
   printf("%s: exit(%d)\n", curr->name, status);
 
@@ -142,22 +141,22 @@ void exit(int status)
       sema_up(&curr->parent->parent_sema);
   }
 
-  /* Close all file descriptors of the exiting process
-  do 
+  /* Close all associated file descriptors of the exiting process */
+  while(!list_empty(&curr->file_desc_list)) 
   {
-    l = list_pop_front(&desc_list);
+    l = list_pop_front(&curr->file_desc_list);
     fdmap = list_entry(l, struct file_desc_mapper, elem);
     file_close(fdmap->exe);
     free(fdmap);
-  } while(!list_empty(&desc_list)); */
+  } 
 
-  /* Free all memory allocated to dead children 
-  do
+  /* Free all memory allocated to dead children */
+  while (!list_empty(&curr->child_list))
   {
-    l = list_pop_front(&my_child_list);
+    l = list_pop_front(&curr->child_list);
     exiting_child = list_entry(l, struct child_exit_status, elem);
     free(exiting_child);
-  } while (!list_empty(&my_child_list)); */
+  }
   
   /* Close file if open */
   if (curr->exe)
