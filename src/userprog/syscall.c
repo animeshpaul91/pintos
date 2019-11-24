@@ -96,6 +96,12 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     }
 
+    case SYS_OPEN:
+    {
+      f->eax = open((char *) *(sp + 1));
+      break;
+    }
+
     default:
       printf("error %d", (*(int*)f->esp)); 
   }
