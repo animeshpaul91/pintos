@@ -21,8 +21,8 @@ static void halt(void);
 static pid_t exec(const char *);
 static int wait(pid_t);
 static bool create(const char *, unsigned);
-/* static bool remove(const char *);
-static int open(const char *);
+static bool remove(const char *);
+/* static int open(const char *);
 static int filesize(int);
 static int read(int, void *, unsigned);*/
 static int write(int, void *, unsigned);
@@ -90,6 +90,12 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     }
 
+    case SYS_REMOVE:
+    {
+      f->eax = remove((char *) *(sp + 1));
+      break;
+    }
+
     default:
       printf("error %d", (*(int*)f->esp)); 
   }
@@ -98,7 +104,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 static bool validate_address(void *address)
 {
   struct thread *curr = thread_current();
-  /* checks if address is within PHYS_BASE and in the thread's page */
   return (is_user_vaddr(address) && pagedir_get_page(curr->pagedir, address) != NULL);
 }
 
@@ -183,17 +188,22 @@ static int wait(pid_t pid)
   if (!validate_address((void *)file) || file == NULL)
     exit(-1);
   lock_acquire(&file_lock);
-  bool result = filesys_create(file, initial_size);
+  bool is_created = filesys_create(file, initial_size);
   lock_release(&file_lock);
-  return result; 
+  return (is_created); 
 }
 
-/* static bool remove(const char *file)
+ static bool remove(const char *file)
 {
-  return true;
+  if (!validate_address((void *)file) || file == NULL)
+    exit(-1);
+  lock_acquire(&file_lock);
+  bool is_removed = filesys_remove(file);
+  lock_release(&file_lock);
+  return (is_removed);
 }
 
-static int open(const char *file)
+/*static int open(const char *file)
 {
   return -1;
 }
