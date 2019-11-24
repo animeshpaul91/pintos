@@ -82,11 +82,11 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     }
 
-    case SYS_CREATE:
+    /*case SYS_CREATE:
     {
       f->eax = create((char *)*(sp + 1), *(sp + 2));
       break;
-    }
+    }*/
 
     default:
       printf("error %d", (*(int*)f->esp)); 
