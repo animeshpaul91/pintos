@@ -115,7 +115,7 @@ struct thread
     bool exec_called;                   /* Bool Flag that sets when exec is called */
     bool exec_success;                  /* Bool flag to indicate success or failure upon calling exec syscall */
     struct list child_list;             /* List containing a parent's dead children */
-    struct list desc_map_list;          /* Descriptor map file list */
+    struct list file_desc_list;          /* Descriptor map file list */
     struct file *exe;                   /* Binary Executable of thread */  
 #endif
 

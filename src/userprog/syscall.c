@@ -22,8 +22,8 @@ static pid_t exec(const char *);
 static int wait(pid_t);
 static bool create(const char *, unsigned);
 static bool remove(const char *);
-/* static int open(const char *);
-static int filesize(int);
+static int open(const char *);
+/* static int filesize(int);
 static int read(int, void *, unsigned);*/
 static int write(int, void *, unsigned);
 /*static void seek(int, unsigned);
@@ -121,7 +121,7 @@ void exit(int status)
   struct child_exit_status *exiting_child;
   //struct file_desc_mapper *fdmap;
   //struct list_elem *l;
-  //struct list my_child_list = curr->child_list, desc_list = curr->desc_map_list;
+  //struct list my_child_list = curr->child_list, desc_list = curr->file_desc_list;
 
   printf("%s: exit(%d)\n", curr->name, status);
 
@@ -203,12 +203,32 @@ static int wait(pid_t pid)
   return (is_removed);
 }
 
-/*static int open(const char *file)
+static int open(const char *file)
 {
-  return -1;
+  if (!validate_address((void *)file))
+    exit(-1);
+
+  if (file == NULL) /* if no file name is provided */
+    return -1;
+  
+  struct thread *curr = thread_current();
+  struct file_desc_mapper *fdm = (struct file_desc_mapper *)malloc(sizeof(struct file_desc_mapper));
+  lock_acquire(&file_lock);
+  fdm->exe = filesys_open(file);
+  lock_release(&file_lock);
+  
+  if (fdm->exe == NULL)
+    return -1;
+  
+  if (list_empty(&curr->file_desc_list))
+    fdm->fd = 2;
+  else
+    fdm->fd = list_entry(list_back(&curr->file_desc_list), struct file_desc_mapper, elem)->fd + 1;
+  list_push_back(&curr->file_desc_list, &fdm->elem);
+  return (fdm->fd);
 }
 
-static int filesize(int fd)
+/* static int filesize(int fd)
 {
   return -1;
 }
