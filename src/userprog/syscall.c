@@ -19,8 +19,8 @@
 static void halt(void);
 static pid_t exec(const char *);
 static int wait(pid_t);
-/* static bool create(const char *, unsigned);
-static bool remove(const char *);
+static bool create(const char *, unsigned);
+/* static bool remove(const char *);
 static int open(const char *);
 static int filesize(int);
 static int read(int, void *, unsigned);*/
@@ -82,11 +82,11 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     }
 
-    /*case SYS_CREATE:
+    case SYS_CREATE:
     {
       f->eax = create((char *)*(sp + 1), *(sp + 2));
       break;
-    }*/
+    }
 
     default:
       printf("error %d", (*(int*)f->esp)); 
@@ -176,7 +176,7 @@ static int wait(pid_t pid)
   return (process_wait(pid));
 }
 
-/* static bool create(const char *file, unsigned initial_size)
+ static bool create(const char *file, unsigned initial_size)
 {
   printf("\nEntered create Syscall");
   if (file == NULL || !validate_address((void *)file))
@@ -196,7 +196,7 @@ static int wait(pid_t pid)
   }  
 }
 
- static bool remove(const char *file)
+/* static bool remove(const char *file)
 {
   return true;
 }
