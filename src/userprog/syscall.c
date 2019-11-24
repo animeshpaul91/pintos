@@ -19,8 +19,8 @@
 static void halt(void);
 static pid_t exec(const char *);
 static int wait(pid_t);
-static bool create(const char *, unsigned);
-/*static bool remove(const char *);
+/* static bool create(const char *, unsigned);
+static bool remove(const char *);
 static int open(const char *);
 static int filesize(int);
 static int read(int, void *, unsigned);*/
@@ -176,7 +176,7 @@ static int wait(pid_t pid)
   return (process_wait(pid));
 }
 
- static bool create(const char *file, unsigned initial_size)
+/* static bool create(const char *file, unsigned initial_size)
 {
   printf("\nEntered create Syscall");
   if (file == NULL || !validate_address((void *)file))
@@ -193,11 +193,10 @@ static int wait(pid_t pid)
     lock_release(&file_lock);
     printf("\nAfter Lock Release");
     return result;
-  }
-  
+  }  
 }
 
-/* static bool remove(const char *file)
+ static bool remove(const char *file)
 {
   return true;
 }
