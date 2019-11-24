@@ -180,20 +180,13 @@ static int wait(pid_t pid)
 
  static bool create(const char *file, unsigned initial_size)
 {
-  printf("\nEntered create Syscall");
   if (file == NULL || !validate_address((void *)file))
     exit(-1);
   else
   {
-    printf("\nBefore Lock Acquire");
     lock_acquire(&file_lock);
-    printf("\nAfter Lock Acquire");
-    printf("\nBefore Filesys Create");
     bool result = filesys_create(file, initial_size);
-    printf("\nAfter Filesys Create");
-    printf("\nBefore Lock Release");
     lock_release(&file_lock);
-    printf("\nAfter Lock Release");
     return result;
   }  
 }
