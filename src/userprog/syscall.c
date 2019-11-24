@@ -13,6 +13,7 @@
 #include "filesys/file.h"     /* To allow file write */
 #include "filesys/filesys.h"  /* For file operations */
 #include "threads/vaddr.h"    /* For is_user_vaddr() */
+#include "threads/synch.h"
 #include "userprog/pagedir.h"
 
 //Added Prototypes Begin (13 System Calls)
@@ -31,7 +32,7 @@ static void close(int);*/
 //Added Prototypes End
 
 //Other helper functions start
-struct lock file_lock;
+static struct lock file_lock;
 static void safe_mem_access(int *);
 static bool validate_address(void *);
 //Other helper functions ends
@@ -47,6 +48,7 @@ syscall_init (void)
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
+  lock_init(&file_lock);
   int *sp = (int *)f->esp; /* Get Current Stack Pointer */
   safe_mem_access(sp);
 
