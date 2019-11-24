@@ -162,9 +162,8 @@ static void halt(void)
 
 static pid_t exec(const char *file)
 {
-  /*if (!validate_address((void *)file))
+  if (!validate_address((void *)file))
     exit(-1);
-  pid_t pid = -1; */
   pid_t pid;
   struct thread *curr = thread_current();
   curr->exec_called = true;
@@ -181,8 +180,7 @@ static int wait(pid_t pid)
 
  static bool create(const char *file, unsigned initial_size)
 {
-  //if (file == NULL || !validate_address((void *)file))
-  if (file == NULL)
+  if (!validate_address((void *)file) || file == NULL)
     exit(-1);
   lock_acquire(&file_lock);
   bool result = filesys_create(file, initial_size);
