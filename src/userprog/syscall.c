@@ -13,7 +13,7 @@
 #include "filesys/file.h"     /* To allow file write */
 #include "filesys/filesys.h"  /* For file operations */
 #include "threads/vaddr.h"    /* For is_user_vaddr() */
-#include "threads/synch.h"
+#include "threads/synch.h"    /* For file_lock */
 #include "userprog/pagedir.h"
 
 //Added Prototypes Begin (13 System Calls)
@@ -104,8 +104,8 @@ static bool validate_address(void *address)
 
 static void safe_mem_access(int *sp)
 {
-  int safe_metric = validate_address(sp) + validate_address(sp + 1) + validate_address(sp + 2) + validate_address(sp + 3);
-  if (safe_metric != 4)
+  bool is_safe = validate_address(sp) && validate_address(sp + 1) && validate_address(sp + 2) && validate_address(sp + 3);
+  if (!is_safe)
     exit(-1);
 }
 
@@ -162,9 +162,10 @@ static void halt(void)
 
 static pid_t exec(const char *file)
 {
-  if (!validate_address((void *)file))
+  /*if (!validate_address((void *)file))
     exit(-1);
-  pid_t pid = -1;
+  pid_t pid = -1; */
+  pid_t pid;
   struct thread *curr = thread_current();
   curr->exec_called = true;
   pid = process_execute(file); //this will call a sema_up() on load() increasing the initial value of 0 to 1.
@@ -180,15 +181,13 @@ static int wait(pid_t pid)
 
  static bool create(const char *file, unsigned initial_size)
 {
-  if (file == NULL || !validate_address((void *)file))
+  //if (file == NULL || !validate_address((void *)file))
+  if (file == NULL)
     exit(-1);
-  else
-  {
-    lock_acquire(&file_lock);
-    bool result = filesys_create(file, initial_size);
-    lock_release(&file_lock);
-    return result;
-  }  
+  lock_acquire(&file_lock);
+  bool result = filesys_create(file, initial_size);
+  lock_release(&file_lock);
+  return result; 
 }
 
 /* static bool remove(const char *file)
