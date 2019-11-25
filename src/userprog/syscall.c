@@ -138,9 +138,9 @@ struct file_desc_mapper *get_file_from_fd(int fd)
   struct file_desc_mapper *fdmap = NULL;
   struct list_elem *l;
 
-  if (list_empty(&curr->desc_file_map))
+  if (list_empty(&curr->file_desc_list))
     return NULL;
-  for (l = list_begin(&curr->desc_file_map); l != list_end(&curr->desc_file_map); l = list_next(l))
+  for (l = list_begin(&curr->file_desc_list); l != list_end(&curr->file_desc_list); l = list_next(l))
   {
     fdmap = list_entry(l, struct file_desc_mapper, elem);
     if (fd == fdmap->fd)
