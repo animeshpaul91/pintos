@@ -153,19 +153,19 @@ static void safe_mem_access(int *sp)
 struct file_desc_mapper *get_file_from_fd(int fd)
 {
   struct thread *curr = thread_current();
-  struct file_desc_mapper *fdmap = NULL;
+  struct file_desc_mapper *fdm = NULL;
   struct list_elem *l;
 
   if (list_empty(&curr->file_desc_list))
     return NULL;
   for (l = list_begin(&curr->file_desc_list); l != list_end(&curr->file_desc_list); l = list_next(l))
   {
-    fdmap = list_entry(l, struct file_desc_mapper, elem);
-    if (fd == fdmap->fd)
+    fdm = list_entry(l, struct file_desc_mapper, elem);
+    if (fd == fdm->fd)
       break;
   }
-  if (fd == fdmap->fd)
-    return (fdmap);
+  if (fd == fdm->fd)
+    return (fdm);
   return (NULL);
 }
 
