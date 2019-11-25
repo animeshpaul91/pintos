@@ -23,8 +23,8 @@ static int wait(pid_t);
 static bool create(const char *, unsigned);
 static bool remove(const char *);
 static int open(const char *);
-/* static int filesize(int);
-static int read(int, void *, unsigned);*/
+static int filesize(int);
+static int read(int, void *, unsigned);
 static int write(int, void *, unsigned);
 /*static void seek(int, unsigned);
 static unsigned tell(int);
@@ -102,8 +102,20 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     }
 
+    case SYS_FILESIZE:
+    {
+      f->eax = filesize(*(sp + 1));
+      break;
+    }
+
+    case SYS_READ:
+    {
+      f->eax = read(*(sp + 1), (void *) *(sp + 2), *(sp + 3));
+      break;
+    }
+
     default:
-      printf("error %d", (*(int*)f->esp)); 
+            printf("error %d", (*(int*)f->esp)); 
   }
 }
 
@@ -118,6 +130,25 @@ static void safe_mem_access(int *sp)
   bool is_safe = validate_address(sp) && validate_address(sp + 1) && validate_address(sp + 2) && validate_address(sp + 3);
   if (!is_safe)
     exit(-1);
+}
+
+struct file_desc_mapper *get_file_from_fd(int fd)
+{
+  struct thread *curr = thread_current();
+  struct file_desc_mapper *fdmap = NULL;
+  struct list_elem *l;
+
+  if (list_empty(&curr->desc_file_map))
+    return NULL;
+  for (l = list_begin(&curr->desc_file_map); l != list_end(&curr->desc_file_map); l = list_next(l))
+  {
+    fdmap = list_entry(l, struct file_desc_mapper, elem);
+    if (fd == fdmap->fd)
+      break;
+  }
+  if (fd == fdmap->fd)
+    return (fdmap);
+  return NULL;
 }
 
 void exit(int status)
@@ -233,33 +264,47 @@ static int open(const char *file)
   return (fdm->fd);
 }
 
-/* static int filesize(int fd)
+static int filesize(int fd)
 {
-  return -1;
+  struct file_desc_mapper *fdm = get_file_from_fd(fd);
+  return ((fdm != NULL)? file_length(fdm->exe): -1);
 }
 
-static int read(int fd, void *buffer, unsigned size)
+ static int read(int fd, void *buffer, unsigned size)
 {
-  return -1;
-} */
+  if (buffer == NULL || !validate_address((void *) buffer))
+    exit(-1);
+  
+  off_t bytes_read = -1;
+  if (fd == 0)
+    bytes_read = input_getc();
+  else
+  {
+    struct file_desc_mapper *fdm = get_file_from_fd(fd);
+    if (fdm != NULL)
+      bytes_read = file_read(fdm->exe, buffer, size); 
+  }
+  return (bytes_read);
+}
 
 static int write(int fd, void *buffer, unsigned size)
 {
-  int ret = -1;
   if (buffer == NULL || !validate_address((void *) buffer))
     exit(-1);
-  else if (fd == 1) //write to System console
+
+  off_t bytes_written = 0;
+  if (fd == 1) //write to System console
   {
     putbuf(buffer, size);
-    ret = 1;
+    bytes_written = 1;
   }
-  /*else
+  else
   {
-    map *df = get_file(fd, false);
-    if (df != NULL)
-      ret = file_write(df->f, buffer, size);
-  }*/
-  return (ret);
+    struct file_desc_mapper *fdm = get_file_from_fd(fd);
+    if (fdm != NULL)
+      bytes_written = file_write(fdm->exe, buffer, size);
+  }
+  return (bytes_written);
 }
 
 /* static void seek(int fd, unsigned position)
@@ -275,24 +320,4 @@ static unsigned tell(int fd)
 static void close(int fd)
 {
 
-}
-
-void *get_file(int fd, bool flag)
-{
-  struct thread *curr = thread_current();
-  struct list map_list = curr->desc_file_map;
-  map *fdmap = NULL;
-  struct list_elem *l;
-
-  if (list_empty(&map_list))
-    return NULL;
-  for (l = list_begin(&map_list); l != list_end(&map_list); l = list_next(l))
-  {
-    fdmap = list_entry(l, map, elem);
-    if (fd == fdmap->fd)
-      break;
-  }
-  if (fd == fdmap->fd)
-    return ((flag) ? (void *)fdmap->f: (void *)fdmap);
-  return NULL;
-}*/
+} */
