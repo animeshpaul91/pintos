@@ -26,9 +26,9 @@ static int open(const char *);
 static int filesize(int);
 static int read(int, void *, unsigned);
 static int write(int, void *, unsigned);
-/*static void seek(int, unsigned);
+static void seek(int, unsigned);
 static unsigned tell(int);
-static void close(int);*/
+static void close(int);
 //Added Prototypes End
 
 //Other helper functions start
@@ -114,8 +114,26 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     }
 
+    case SYS_SEEK:
+    {
+      seek(*(sp + 1), *(sp + 2));      
+      break;
+    }
+
+    case SYS_TELL:
+    {
+      f->eax = tell(*(sp + 1));
+      break;
+    }
+
+    case SYS_CLOSE:
+    {
+      close(*(sp + 1));
+      break;
+    }
+
     default:
-            printf("error %d", (*(int*)f->esp)); 
+            exit(-1);
   }
 }
 
@@ -148,7 +166,7 @@ struct file_desc_mapper *get_file_from_fd(int fd)
   }
   if (fd == fdmap->fd)
     return (fdmap);
-  return NULL;
+  return (NULL);
 }
 
 void exit(int status)
@@ -178,6 +196,7 @@ void exit(int status)
     l = list_pop_front(&curr->file_desc_list);
     fdmap = list_entry(l, struct file_desc_mapper, elem);
     file_close(fdmap->exe);
+    list_remove(l);
     free(fdmap);
   } 
 
@@ -186,6 +205,7 @@ void exit(int status)
   {
     l = list_pop_front(&curr->child_list);
     exiting_child = list_entry(l, struct child_exit_status, elem);
+    list_remove(l);
     free(exiting_child);
   }
   
@@ -307,17 +327,31 @@ static int write(int fd, void *buffer, unsigned size)
   return (bytes_written);
 }
 
-/* static void seek(int fd, unsigned position)
+static void seek(int fd, unsigned position)
 {
-
+  struct file_desc_mapper *fdm = get_file_from_fd(fd);
+  if (fdm != NULL)
+    file_seek(fdm->exe, (off_t)position);
 }
 
 static unsigned tell(int fd)
 {
-  return 1;
+  off_t position = -1;
+  struct file_desc_mapper *fdm = get_file_from_fd(fd);
+  if (fdm != NULL)
+    position = file_tell(fdm->exe);
+  return (position);
 }
 
 static void close(int fd)
 {
-
-} */
+  struct file_desc_mapper *fdm = get_file_from_fd(fd);
+  if (fdm != NULL)
+  {
+    lock_acquire(&file_lock);
+    file_close(fdm->exe);
+    list_remove(&fdm->elem);
+    free(fdm);
+    lock_release(&file_lock);
+  }
+}
