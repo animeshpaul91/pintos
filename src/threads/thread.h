@@ -4,6 +4,7 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "threads/synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -108,11 +109,26 @@ struct thread
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
+    //Added Struct elements begins
+    struct thread *parent;
+    struct semaphore parent_sema;
+    int error_status;
 #endif
 
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
+
+//Added Code Begins
+#ifdef USERPROG
+  struct child_exit_status
+  {
+    tid_t tid;                            /* TID of child thread */
+    int exit_status;                      /* Exit status of child thread */
+    struct list_elem elem;                /* List Element for struct */    
+  };
+#endif
+//Added Code Ends
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -163,7 +179,7 @@ void thread_sort_ready_list(void);
 void thread_calculate_recent_cpu(struct thread *, void *aux UNUSED);
 void thread_increment_recent_cpu(struct thread *);
 void thread_calculate_load_avg(void);
-
+struct thread *get_thread_with_tid(tid_t tid);
 //End
 
 #endif /* threads/thread.h */

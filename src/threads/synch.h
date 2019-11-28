@@ -32,7 +32,7 @@ bool lock_try_acquire (struct lock *);
 void lock_release (struct lock *);
 bool lock_held_by_current_thread (const struct lock *);
 bool cond_order_condition (const struct list_elem *, const struct list_elem *, void *);
-bool lock_priority_compare(struct list_elem *lock_1, struct list_elem *lock_2);
+bool lock_priority_compare(const struct list_elem *, const struct list_elem *, void *);
 
 /* Condition variable. */
 struct condition 

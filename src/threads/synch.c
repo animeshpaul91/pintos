@@ -412,6 +412,8 @@ cond_order_condition (const struct list_elem *first, const struct list_elem *sec
 }
 
 bool 
-lock_priority_compare(struct list_elem *lock_1, struct list_elem *lock_2) {
-	return (list_entry(lock_1, struct lock, elem)->priority > list_entry(lock_2, struct lock, elem)->priority);
+lock_priority_compare(const struct list_elem *lock_1, const struct list_elem *lock_2, void *aux UNUSED) {
+  struct lock *l1 = list_entry(lock_1, struct lock, elem);
+  struct lock *l2 = list_entry(lock_2, struct lock, elem);
+	return (l1->priority > l2->priority);
 }

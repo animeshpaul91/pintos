@@ -18,8 +18,15 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+//Added Header File
+#include "threads/malloc.h"
+
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
+
+//Added prototype
+static void initialize_stack(const char *file_name, void **esp);
+//Ends
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -39,6 +46,10 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
+  //Added Code 
+  char *save_ptr;
+  file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
+  //Added Ends
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
@@ -88,6 +99,7 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
+  sema_down(&thread_current()->parent_sema);
   return -1;
 }
 
@@ -195,7 +207,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (void **esp, const char *);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -221,8 +233,18 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
+  //Added begins
+  char *loc_of_space;
+  loc_of_space = strstr(file_name, " ");
+  if (loc_of_space != NULL)
+    *loc_of_space = '\0';
+
   /* Open executable file. */
   file = filesys_open (file_name);
+  
+  if(loc_of_space != NULL)
+    *loc_of_space = ' ';
+  
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -302,7 +324,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (esp, file_name))
     goto done;
 
   /* Start address. */
@@ -427,7 +449,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp) 
+setup_stack (void **esp, const char *file_name) 
 {
   uint8_t *kpage;
   bool success = false;
@@ -441,6 +463,9 @@ setup_stack (void **esp)
       else
         palloc_free_page (kpage);
     }
+
+  //Added Code
+  initialize_stack(file_name, esp); //Sets up Stack
   return success;
 }
 
@@ -462,4 +487,68 @@ install_page (void *upage, void *kpage, bool writable)
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
+}
+
+//Added
+static void initialize_stack(const char *file_name, void **esp)
+{
+  char *token, *save_ptr, **argv;
+  int i, w_size, num_of_bytes, argc, base_addr;
+
+  w_size = sizeof(char *); /* Size of Pointer */
+  argv = palloc_get_page(0); /* Ensure that # of args does not exceed # of addresses in a page */
+
+  ASSERT(argv != NULL);
+
+  /* Adding the Arguments to Stack */
+  argc = 0;
+  token = strtok_r((char*)file_name, " ", &save_ptr);
+
+  while (token != NULL)
+  {
+    num_of_bytes = strlen(token) + 1;
+    *esp -= num_of_bytes;
+    memcpy(*esp, token, num_of_bytes);
+    argv[argc] = *esp;
+    token = strtok_r(NULL, " ", &save_ptr);
+    argc++;
+  }
+
+  /* The Last byte might need padding */
+  num_of_bytes = w_size - ((size_t) *esp % w_size);
+
+  if(num_of_bytes > 0)
+  {
+    *esp -= num_of_bytes;
+    memset(*esp, 0, num_of_bytes);
+  }
+
+  /* Pushing Sentinel */
+  *esp -= w_size;
+  memset(*esp, 0, w_size);
+
+  /* Pushing argv[argc -1] to argv[0] to Stack */
+  i = argc - 1;
+  while (i > -1)
+  {
+    *esp -= w_size;
+    memcpy(*esp, &argv[i], w_size);
+    i--;
+  }
+
+  /* Pushing address of argv */
+  base_addr = (int) *esp;
+  *esp -= w_size;
+  memcpy(*esp, &base_addr, w_size);
+
+  /* Pushing address of argc */
+  *esp -= w_size;
+  memcpy(*esp, &argc, w_size);
+
+  /* Pushing Fake Return Address */
+  *esp -= w_size;
+  memset(*esp, 0, w_size);
+
+  /* Free page */
+  palloc_free_page(argv);
 }
