@@ -104,13 +104,13 @@ process_wait (tid_t child_tid UNUSED)
   struct thread *parent = thread_current(), *child = get_thread_with_tid(child_tid);
   struct child_exit_status *exiting_child = NULL;
   struct list_elem *l;
-  int status;
+  int status = -1;
 
   if (child != NULL && child->parent == parent) //If child is found and parent is the calling thread 
     sema_down(&parent->parent_sema);
   
   if (list_empty(&parent->child_list))  //Iterate through Parent's dead children 
-    return -1;
+    return status;
 
   l = list_begin(&parent->child_list);
   while (l != list_end(&parent->child_list))
@@ -378,7 +378,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     sema_up(&t->parent_sema);
   }
   //Added code ends
-
+  
   return success;
 }
 
