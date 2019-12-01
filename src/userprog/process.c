@@ -18,15 +18,11 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
-//Added Header File
-#include "threads/malloc.h"
-
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
 //Added prototype
 static void initialize_stack(const char *file_name, void **esp);
-//Ends
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
