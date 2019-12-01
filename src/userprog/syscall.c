@@ -133,8 +133,8 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
 
     default:
-            //exit(-1);
-            printf("Default %d\n", *sp);
+            exit(-1);
+            //printf("Default %d\n", *sp);
   }
 }
 
