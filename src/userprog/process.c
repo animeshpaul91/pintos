@@ -48,6 +48,7 @@ process_execute (const char *file_name)
   
   //Added Code
   char *save_ptr;
+  printf("\nIn Process_Execute() before exit(-1)\n");
   file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
   printf("\nStrtok is the root cause of the bug\n");
   //Added Ends
