@@ -228,10 +228,8 @@ static pid_t exec(const char *file)
 {
   printf("\nIn Exec Syscall. Before Exit(-1)\n");
   if (!validate_address((void *)file))
-   { exit(-1);
-      printf("\nTest\n");
-   }
-  pid_t pid = -1;
+    exit(-1);
+  pid_t pid;
   struct thread *curr = thread_current();
   curr->exec_called = true;
   pid = process_execute(file); //this will call a sema_up() on load() increasing the initial value of 0 to 1.
