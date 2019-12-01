@@ -223,9 +223,9 @@ static void halt(void)
 
 static pid_t exec(const char *file)
 {
-  if (!validate_address((void *)file))
-    exit(-1);
-  pid_t pid;
+  /*if (!validate_address((void *)file))
+    exit(-1);*/
+  pid_t pid = -1;
   struct thread *curr = thread_current();
   curr->exec_called = true;
   pid = process_execute(file); //this will call a sema_up() on load() increasing the initial value of 0 to 1.
