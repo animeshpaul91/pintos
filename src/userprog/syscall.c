@@ -227,8 +227,8 @@ static void halt(void)
 static pid_t exec(const char *file)
 {
   printf("\nIn Exec Syscall. Before Exit(-1)\n");
-  if (!validate_address((void *)file))
-    exit(-1);
+  //if (!validate_address((void *)file))
+  //  exit(-1);
   pid_t pid = -1;
   struct thread *curr = thread_current();
   curr->exec_called = true;
