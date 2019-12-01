@@ -178,6 +178,13 @@ void exit(int status)
   struct list_elem *l;
 
   printf("%s: exit(%d)\n", curr->name, status);
+  
+  if (status == -1)
+  {
+    printf("\nDebugging Exec...\n");
+    printf("\nCurrent Thread: %s", curr->name);
+    printf("\Parent Thread: %s", parent->name);
+  }
 
   if (parent != NULL)
   {
