@@ -50,6 +50,7 @@ process_execute (const char *file_name)
   printf("\nIn Process_Execute(). Before Exit(-1)\n");
   char *save_ptr;
   file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
+  printf("\nAfter Strtok. Checking if this line is the root cause\n");
   //Added Ends
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   
