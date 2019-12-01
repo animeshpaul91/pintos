@@ -47,9 +47,10 @@ process_execute (const char *file_name)
   /* Create a new thread to execute FILE_NAME. */
   
   //Added Code
-  char *save_ptr, *thread_name;
+  char *save_ptr;
+  const char *thread_name;
   int n = strlen(file_name) + 1;
-  thread_name = (char *)malloc(n);
+  thread_name = (const char *)malloc(n);
   strlcpy(thread_name, file_name, n);
   printf("\nIn Process_Execute() before exit(-1)\n");
   thread_name = (const char *)strtok_r(thread_name, " ", &save_ptr);
@@ -57,7 +58,7 @@ process_execute (const char *file_name)
   tid = thread_create (thread_name, PRI_DEFAULT, start_process, fn_copy);
   free(thread_name);
   //Added Ends
-  
+
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
