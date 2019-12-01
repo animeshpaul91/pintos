@@ -232,6 +232,7 @@ static pid_t exec(const char *file)
   pid_t pid;
   struct thread *curr = thread_current();
   curr->exec_called = true;
+  printf("\nCall made to process_execute()\n");
   pid = process_execute(file); //this will call a sema_up() on load() increasing the initial value of 0 to 1.
   printf("\nReturned PID = %d\n", pid);
   sema_down(&curr->parent_sema);
