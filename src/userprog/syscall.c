@@ -241,8 +241,8 @@ static int wait(pid_t pid)
 
  static bool create(const char *file, unsigned initial_size)
 {
-  /*if (!validate_address((void *)file) || file == NULL)
-    exit(-1);*/
+  if (!validate_address((void *)file) || file == NULL)
+    exit(-1);
   lock_acquire(&file_lock);
   bool is_created = filesys_create(file, initial_size);
   lock_release(&file_lock);
@@ -261,8 +261,8 @@ static int wait(pid_t pid)
 
 static int open(const char *file)
 {
-  if (!validate_address((void *)file))
-    exit(-1);
+  /*if (!validate_address((void *)file))
+    exit(-1);*/
 
   if (file == NULL) /* if no file name is provided */
     return -1;
