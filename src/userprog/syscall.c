@@ -261,8 +261,8 @@ static int wait(pid_t pid)
 
 static int open(const char *file)
 {
-  /*if (!validate_address((void *)file))
-    exit(-1);*/
+  if (!validate_address((void *)file))
+    exit(-1);
 
   if (file == NULL) /* if no file name is provided */
     return -1;
