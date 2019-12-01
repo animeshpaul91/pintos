@@ -47,11 +47,9 @@ process_execute (const char *file_name)
   /* Create a new thread to execute FILE_NAME. */
   
   //Added Code
-  printf("\nIn Process_Execute(). Before Exit(-1)\n");
   char *save_ptr;
-  printf("\nTesting\n");
   file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
-  printf("\nAfter Strtok. Checking if this line is the root cause\n");
+  printf("\nStrtok is the root cause of the bug\n");
   //Added Ends
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   
