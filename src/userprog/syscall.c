@@ -183,7 +183,7 @@ void exit(int status)
   {
     printf("\nDebugging Exec...\n");
     printf("\nCurrent Thread: %s", curr->name);
-    printf("\Parent Thread: %s", parent->name);
+    printf("\nParent Thread: %s", parent->name);
   }
 
   if (parent != NULL)
