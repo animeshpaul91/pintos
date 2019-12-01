@@ -49,12 +49,12 @@ process_execute (const char *file_name)
   //Added Code
   char *save_ptr, *thread_name;
   int n = strlen(file_name) + 1;
-  thread_name = (const char *)malloc(n);
+  thread_name = (char *)malloc(n);
   strlcpy(thread_name, file_name, n);
   printf("\nIn Process_Execute() before exit(-1)\n");
-  thread_name = (const char *)strtok_r((const char *)thread_name, " ", &save_ptr);
+  thread_name = strtok_r(thread_name, " ", &save_ptr);
   printf("\nStrtok is the root cause of the bug\n");
-  tid = thread_create (thread_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create ((const char *)thread_name, PRI_DEFAULT, start_process, fn_copy);
   free(thread_name);
   //Added Ends
 
