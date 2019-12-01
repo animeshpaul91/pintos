@@ -223,9 +223,9 @@ static void halt(void)
 
 static pid_t exec(const char *file)
 {
-  /*if (!validate_address((void *)file))
-    exit(-1);*/
-  pid_t pid = -1;
+  if (!validate_address((void *)file))
+    exit(-1);
+  pid_t pid;
   struct thread *curr = thread_current();
   curr->exec_called = true;
   pid = process_execute(file); //this will call a sema_up() on load() increasing the initial value of 0 to 1.
@@ -241,8 +241,8 @@ static int wait(pid_t pid)
 
  static bool create(const char *file, unsigned initial_size)
 {
-  if (!validate_address((void *)file) || file == NULL)
-    exit(-1);
+  /*if (!validate_address((void *)file) || file == NULL)
+    exit(-1);*/
   lock_acquire(&file_lock);
   bool is_created = filesys_create(file, initial_size);
   lock_release(&file_lock);
