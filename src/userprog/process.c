@@ -105,6 +105,7 @@ process_wait (tid_t child_tid UNUSED)
   struct list_elem *l;
   int status = -1;
 
+  printf("\n%s has to wait for child thread = %s\n",parent->name, child->name);
   if (child != NULL && child->parent == parent) //If child is found and parent is the calling thread 
     sema_down(&parent->parent_sema);
   
@@ -126,6 +127,7 @@ process_wait (tid_t child_tid UNUSED)
     list_remove(&exiting_child->elem);
     free(exiting_child);
   }
+  printf("\nStatus is = %d\n", status);
   return status;
 }
 
