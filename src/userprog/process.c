@@ -18,7 +18,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
-//Added Header File
+//Added header file
 #include "threads/malloc.h"
 
 static thread_func start_process NO_RETURN;
@@ -26,7 +26,6 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 
 //Added prototype
 static void initialize_stack(const char *file_name, void **esp);
-//Ends
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -47,12 +46,16 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   
-  //Added Code 
-  char *save_ptr;
-  file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
+  //Added Code
+  char *save_ptr, *thread_name;
+  int n = strlen(file_name) + 1;
+  thread_name = (char *)malloc(n);
+  strlcpy(thread_name, file_name, n);
+  thread_name = strtok_r(thread_name, " ", &save_ptr);
+  tid = thread_create ((const char *)thread_name, PRI_DEFAULT, start_process, fn_copy);
+  free(thread_name);
   //Added Ends
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
-  
+
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -272,11 +275,18 @@ load (const char *file_name, void (**eip) (void), void **esp)
   if(loc_of_space != NULL)
     *loc_of_space = ' ';
   
+  //Added Ends
+
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
       goto done; 
     }
+
+  /* Deny write to open file (Added Code) */
+  t->exe = file;
+  file_deny_write(t->exe);
+  /* Added code ends */
 
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
@@ -361,7 +371,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+  /* file_close (file); Commented because closing the file will re-enable writes */
 
   //Added Code Starts
   t = t->parent;

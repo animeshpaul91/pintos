@@ -133,7 +133,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
 
     default:
-            exit(-1);
+            printf("default %d\n", *sp);
   }
 }
 
@@ -178,7 +178,7 @@ void exit(int status)
   struct list_elem *l;
 
   printf("%s: exit(%d)\n", curr->name, status);
-
+  
   if (parent != NULL)
   {
     exiting_child = (struct child_exit_status *)malloc(sizeof(struct child_exit_status));
@@ -212,7 +212,6 @@ void exit(int status)
   /* Close file if open */
   if (curr->exe)
     file_close(curr->exe);
-  
   thread_exit();
 }
 
