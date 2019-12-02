@@ -576,7 +576,11 @@ init_thread (struct thread *t, const char *name, int priority)
   #ifdef USERPROG
   t->parent = running_thread();
   sema_init(&t->parent_sema, 0);
-  //sema_init(&t->parent->parent_sema, 0);
+  t->exec_called = false;
+  t->exec_success = false;
+  list_init(&t->child_list);
+  list_init(&t->file_desc_list);
+  t->exe = NULL;
   #endif
   //Added Code Ends
 
@@ -857,8 +861,11 @@ struct thread *get_thread_with_tid(tid_t tid)
   struct list_elem *iter;
   struct thread *t;
   for (iter = list_begin(&all_list); iter != list_end(&all_list); iter = list_next(iter))
-    if (tid == list_entry(iter, struct thread, elem)->tid)
+  {
+    t = list_entry(iter, struct thread, allelem);
+    if (t->tid == tid)
       return t;
+  }
   return NULL;
 }
 //Added Functions End.

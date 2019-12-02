@@ -46,11 +46,13 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
 
   /* Create a new thread to execute FILE_NAME. */
+  
   //Added Code 
   char *save_ptr;
   file_name = (const char *)strtok_r((char *)file_name, " ", &save_ptr);
   //Added Ends
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  
   if (tid == TID_ERROR)
     palloc_free_page (fn_copy); 
   return tid;
@@ -99,8 +101,33 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  sema_down(&thread_current()->parent_sema);
-  return -1;
+  struct thread *parent = thread_current(), *child = get_thread_with_tid(child_tid);
+  struct child_exit_status *exiting_child = NULL;
+  struct list_elem *l;
+  int status = -1;
+
+  if (child != NULL && child->parent == parent) //If child is found and parent is the calling thread 
+    sema_down(&parent->parent_sema);
+  
+  if (list_empty(&parent->child_list))  //Iterate through Parent's dead children 
+    return status;
+
+  l = list_begin(&parent->child_list);
+  while (l != list_end(&parent->child_list))
+  {
+    exiting_child = list_entry(l, struct child_exit_status, elem);
+    if (child_tid == exiting_child->tid)
+      break;
+    l = list_next(l);
+  }
+
+  if (child_tid == exiting_child->tid)
+  {
+    status = exiting_child->exit_status;
+    list_remove(&exiting_child->elem);
+    free(exiting_child);
+  }
+  return status;
 }
 
 /* Free the current process's resources. */
@@ -335,6 +362,16 @@ load (const char *file_name, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+
+  //Added Code Starts
+  t = t->parent;
+  if (t->exec_called && t != NULL)
+  {
+    t->exec_success = success;
+    sema_up(&t->parent_sema);
+  }
+  //Added code ends
+  
   return success;
 }
 

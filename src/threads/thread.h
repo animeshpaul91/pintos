@@ -110,9 +110,13 @@ struct thread
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
     //Added Struct elements begins
-    struct thread *parent;
-    struct semaphore parent_sema;
-    int error_status;
+    struct thread *parent;              /* Pointer to Parent Thread */
+    struct semaphore parent_sema;       /* Parent Semaphore for Synchronization(Wait & exec) */
+    bool exec_called;                   /* Bool Flag that sets when exec is called */
+    bool exec_success;                  /* Bool flag to indicate success or failure upon calling exec syscall */
+    struct list child_list;             /* List containing a parent's dead children */
+    struct list file_desc_list;          /* Descriptor map file list */
+    struct file *exe;                   /* Binary Executable of thread */  
 #endif
 
     /* Owned by thread.c. */
