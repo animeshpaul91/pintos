@@ -51,9 +51,9 @@ process_execute (const char *file_name)
   int n = strlen(file_name) + 1;
   thread_name = (char *)malloc(n);
   strlcpy(thread_name, file_name, n);
-  printf("\nIn Process_Execute() before exit(-1)\n");
+  //printf("\nIn Process_Execute() before exit(-1)\n");
   thread_name = strtok_r(thread_name, " ", &save_ptr);
-  printf("\nStrtok is the root cause of the bug\n");
+  //printf("\nStrtok is the root cause of the bug\n");
   tid = thread_create ((const char *)thread_name, PRI_DEFAULT, start_process, fn_copy);
   free(thread_name);
   //Added Ends
@@ -111,7 +111,7 @@ process_wait (tid_t child_tid UNUSED)
   struct list_elem *l;
   int status = -1;
 
-  printf("\n%s has to wait for child thread = %s\n",parent->name, child->name);
+  //printf("\n%s has to wait for child thread = %s\n",parent->name, child->name);
   if (child != NULL && child->parent == parent) //If child is found and parent is the calling thread 
     sema_down(&parent->parent_sema);
   
@@ -133,7 +133,7 @@ process_wait (tid_t child_tid UNUSED)
     list_remove(&exiting_child->elem);
     free(exiting_child);
   }
-  printf("\nStatus is = %d\n", status);
+  //printf("\nStatus is = %d\n", status);
   return status;
 }
 
