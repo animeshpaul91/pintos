@@ -224,8 +224,8 @@ static void halt(void)
 
 static pid_t exec(const char *file)
 {
-  /* if (!validate_address((void *)file))
-    exit(-1); */
+   if (!validate_address((void *)file))
+    exit(-1);
   pid_t pid = -1;
   struct thread *curr = thread_current();
   curr->exec_called = true;
@@ -242,7 +242,7 @@ static int wait(pid_t pid)
 
  static bool create(const char *file, unsigned initial_size)
 {
-  if (/*!validate_address((void *)file) ||*/ !file)
+  if (!validate_address((void *)file) || !file)
     exit(-1);
   lock_acquire(&file_lock);
   bool is_created = filesys_create(file, initial_size);
@@ -252,7 +252,7 @@ static int wait(pid_t pid)
 
  static bool remove(const char *file)
 {
-  if (/*!validate_address((void *)file) ||*/ !file)
+  if (!validate_address((void *)file) || !file)
     exit(-1);
   lock_acquire(&file_lock);
   bool is_removed = filesys_remove(file);
@@ -262,8 +262,8 @@ static int wait(pid_t pid)
 
 static int open(const char *file)
 {
-  /*if (!validate_address((void *)file))
-    exit(-1);*/
+  if (!validate_address((void *)file))
+    exit(-1);
 
   if (!file) /* if no file name is provided */
     return -1;
@@ -293,7 +293,7 @@ static int filesize(int fd)
 
  static int read(int fd, void *buffer, unsigned size)
 {
-  if (!buffer /*|| !validate_address((void *) buffer)*/)
+  if (!buffer || !validate_address((void *) buffer))
     exit(-1);
   
   off_t bytes_read = -1;
@@ -310,11 +310,11 @@ static int filesize(int fd)
 
 static int write(int fd, void *buffer, unsigned size)
 {
-  if (!buffer /*|| !validate_address((void *) buffer)*/)
+  if (!buffer || !validate_address((void *) buffer))
     exit(-1);
 
   off_t bytes_written = 0;
-  if (fd == 1) //write to System console
+  if (fd == 1) /* write to System console */
   {
     putbuf(buffer, size);
     bytes_written = 1;
