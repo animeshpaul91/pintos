@@ -43,12 +43,14 @@ void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+  //Added Code begins
+  lock_init(&file_lock);
+  //Added Code ends
 }
 
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
-  lock_init(&file_lock);
   int *sp = (int *)f->esp; /* Get Current Stack Pointer */
   safe_mem_access(sp);
 
