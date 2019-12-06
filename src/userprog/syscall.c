@@ -263,7 +263,7 @@ static int open(const char *file)
   if (!validate_address((void *)file))
     exit(-1);
 
-  if (file == NULL) /* if no file name is provided */
+  if (!file) /* if no file name is provided */
     return -1;
   
   struct thread *curr = thread_current();
@@ -272,7 +272,7 @@ static int open(const char *file)
   fdm->exe = filesys_open(file);
   lock_release(&file_lock);
   
-  if (fdm->exe == NULL)
+  if (!fdm->exe)
     return -1;
   
   if (list_empty(&curr->file_desc_list))
@@ -329,7 +329,7 @@ static int write(int fd, void *buffer, unsigned size)
 static void seek(int fd, unsigned position)
 {
   struct file_desc_mapper *fdm = get_file_from_fd(fd);
-  if (fdm != NULL)
+  if (fdm)
     file_seek(fdm->exe, (off_t)position);
 }
 
@@ -337,7 +337,7 @@ static unsigned tell(int fd)
 {
   off_t position = -1;
   struct file_desc_mapper *fdm = get_file_from_fd(fd);
-  if (fdm != NULL)
+  if (fdm)
     position = file_tell(fdm->exe);
   return (position);
 }
@@ -345,7 +345,7 @@ static unsigned tell(int fd)
 static void close(int fd)
 {
   struct file_desc_mapper *fdm = get_file_from_fd(fd);
-  if (fdm != NULL)
+  if (fdm)
   {
     lock_acquire(&file_lock);
     file_close(fdm->exe);
