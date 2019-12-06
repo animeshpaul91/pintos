@@ -240,7 +240,7 @@ static int wait(pid_t pid)
 
  static bool create(const char *file, unsigned initial_size)
 {
-  if (!validate_address((void *)file) || file == NULL)
+  if (!validate_address((void *)file) || !file)
     exit(-1);
   lock_acquire(&file_lock);
   bool is_created = filesys_create(file, initial_size);
@@ -250,7 +250,7 @@ static int wait(pid_t pid)
 
  static bool remove(const char *file)
 {
-  if (!validate_address((void *)file) || file == NULL)
+  if (!validate_address((void *)file) || !file)
     exit(-1);
   lock_acquire(&file_lock);
   bool is_removed = filesys_remove(file);
@@ -291,7 +291,7 @@ static int filesize(int fd)
 
  static int read(int fd, void *buffer, unsigned size)
 {
-  if (buffer == NULL || !validate_address((void *) buffer))
+  if (!buffer || !validate_address((void *) buffer))
     exit(-1);
   
   off_t bytes_read = -1;
@@ -300,7 +300,7 @@ static int filesize(int fd)
   else
   {
     struct file_desc_mapper *fdm = get_file_from_fd(fd);
-    if (fdm != NULL)
+    if (fdm)
       bytes_read = file_read(fdm->exe, buffer, size); 
   }
   return (bytes_read);
@@ -308,7 +308,7 @@ static int filesize(int fd)
 
 static int write(int fd, void *buffer, unsigned size)
 {
-  if (buffer == NULL || !validate_address((void *) buffer))
+  if (!buffer || !validate_address((void *) buffer))
     exit(-1);
 
   off_t bytes_written = 0;
@@ -320,7 +320,7 @@ static int write(int fd, void *buffer, unsigned size)
   else
   {
     struct file_desc_mapper *fdm = get_file_from_fd(fd);
-    if (fdm != NULL)
+    if (fdm)
       bytes_written = file_write(fdm->exe, buffer, size);
   }
   return (bytes_written);
