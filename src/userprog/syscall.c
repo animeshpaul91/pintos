@@ -179,7 +179,7 @@ void exit(int status)
 
   printf("%s: exit(%d)\n", curr->name, status);
   
-  if (parent != NULL)
+  if (parent)
   {
     exiting_child = (struct child_exit_status *)malloc(sizeof(struct child_exit_status));
     exiting_child->tid = curr->tid;
