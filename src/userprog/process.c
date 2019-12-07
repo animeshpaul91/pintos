@@ -275,7 +275,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   free(file_cpy);
   //Added Ends
-
+  
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
