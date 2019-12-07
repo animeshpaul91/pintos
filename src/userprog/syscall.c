@@ -43,12 +43,14 @@ void
 syscall_init (void) 
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
+  //Added Code begins
+  lock_init(&file_lock);
+  //Added Code ends
 }
 
 static void
 syscall_handler (struct intr_frame *f UNUSED) 
 {
-  lock_init(&file_lock);
   int *sp = (int *)f->esp; /* Get Current Stack Pointer */
   safe_mem_access(sp);
 
@@ -179,7 +181,7 @@ void exit(int status)
 
   printf("%s: exit(%d)\n", curr->name, status);
   
-  if (parent != NULL)
+  if (parent)
   {
     exiting_child = (struct child_exit_status *)malloc(sizeof(struct child_exit_status));
     exiting_child->tid = curr->tid;
@@ -224,7 +226,7 @@ static pid_t exec(const char *file)
 {
   if (!validate_address((void *)file))
     exit(-1);
-  pid_t pid;
+  pid_t pid = -1;
   struct thread *curr = thread_current();
   curr->exec_called = true;
   pid = process_execute(file); //this will call a sema_up() on load() increasing the initial value of 0 to 1.
@@ -240,7 +242,7 @@ static int wait(pid_t pid)
 
  static bool create(const char *file, unsigned initial_size)
 {
-  if (!validate_address((void *)file) || file == NULL)
+  if (!validate_address((void *)file) || !file)
     exit(-1);
   lock_acquire(&file_lock);
   bool is_created = filesys_create(file, initial_size);
@@ -250,7 +252,7 @@ static int wait(pid_t pid)
 
  static bool remove(const char *file)
 {
-  if (!validate_address((void *)file) || file == NULL)
+  if (!validate_address((void *)file) || !file)
     exit(-1);
   lock_acquire(&file_lock);
   bool is_removed = filesys_remove(file);
@@ -263,7 +265,7 @@ static int open(const char *file)
   if (!validate_address((void *)file))
     exit(-1);
 
-  if (file == NULL) /* if no file name is provided */
+  if (!file) /* if no file name is provided */
     return -1;
   
   struct thread *curr = thread_current();
@@ -272,7 +274,7 @@ static int open(const char *file)
   fdm->exe = filesys_open(file);
   lock_release(&file_lock);
   
-  if (fdm->exe == NULL)
+  if (!fdm->exe)
     return -1;
   
   if (list_empty(&curr->file_desc_list))
@@ -291,7 +293,7 @@ static int filesize(int fd)
 
  static int read(int fd, void *buffer, unsigned size)
 {
-  if (buffer == NULL || !validate_address((void *) buffer))
+  if (!buffer || !validate_address((void *) buffer))
     exit(-1);
   
   off_t bytes_read = -1;
@@ -300,7 +302,7 @@ static int filesize(int fd)
   else
   {
     struct file_desc_mapper *fdm = get_file_from_fd(fd);
-    if (fdm != NULL)
+    if (fdm)
       bytes_read = file_read(fdm->exe, buffer, size); 
   }
   return (bytes_read);
@@ -308,11 +310,11 @@ static int filesize(int fd)
 
 static int write(int fd, void *buffer, unsigned size)
 {
-  if (buffer == NULL || !validate_address((void *) buffer))
+  if (!buffer || !validate_address((void *) buffer))
     exit(-1);
 
   off_t bytes_written = 0;
-  if (fd == 1) //write to System console
+  if (fd == 1) /* write to System console */
   {
     putbuf(buffer, size);
     bytes_written = 1;
@@ -320,7 +322,7 @@ static int write(int fd, void *buffer, unsigned size)
   else
   {
     struct file_desc_mapper *fdm = get_file_from_fd(fd);
-    if (fdm != NULL)
+    if (fdm)
       bytes_written = file_write(fdm->exe, buffer, size);
   }
   return (bytes_written);
@@ -329,7 +331,7 @@ static int write(int fd, void *buffer, unsigned size)
 static void seek(int fd, unsigned position)
 {
   struct file_desc_mapper *fdm = get_file_from_fd(fd);
-  if (fdm != NULL)
+  if (fdm)
     file_seek(fdm->exe, (off_t)position);
 }
 
@@ -337,7 +339,7 @@ static unsigned tell(int fd)
 {
   off_t position = -1;
   struct file_desc_mapper *fdm = get_file_from_fd(fd);
-  if (fdm != NULL)
+  if (fdm)
     position = file_tell(fdm->exe);
   return (position);
 }
@@ -345,7 +347,7 @@ static unsigned tell(int fd)
 static void close(int fd)
 {
   struct file_desc_mapper *fdm = get_file_from_fd(fd);
-  if (fdm != NULL)
+  if (fdm)
   {
     lock_acquire(&file_lock);
     file_close(fdm->exe);

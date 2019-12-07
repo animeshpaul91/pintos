@@ -109,7 +109,7 @@ process_wait (tid_t child_tid UNUSED)
   struct list_elem *l;
   int status = -1;
 
-  if (child != NULL && child->parent == parent) //If child is found and parent is the calling thread 
+  if (child && child->parent == parent) //If child is found and parent is the calling thread 
     sema_down(&parent->parent_sema);
   
   if (list_empty(&parent->child_list))  //Iterate through Parent's dead children 
@@ -264,19 +264,18 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   //Added begins
-  char *loc_of_space;
-  loc_of_space = strstr(file_name, " ");
-  if (loc_of_space != NULL)
-    *loc_of_space = '\0';
+  char *save_ptr, *file_cpy;
+  int n = strlen(file_name) + 1;
+  file_cpy = (char *)malloc(n);
+  strlcpy(file_cpy, file_name, n);
+  file_cpy = strtok_r(file_cpy, " ", &save_ptr);
 
-  /* Open executable file. */
-  file = filesys_open (file_name);
-  
-  if(loc_of_space != NULL)
-    *loc_of_space = ' ';
-  
+  /* Open executable file. Original Code (Just Argument Changed) */
+  file = filesys_open (file_cpy);
+
+  free(file_cpy);
   //Added Ends
-
+  
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -375,7 +374,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   //Added Code Starts
   t = t->parent;
-  if (t->exec_called && t != NULL)
+  if (t->exec_called && t)
   {
     t->exec_success = success;
     sema_up(&t->parent_sema);
@@ -551,7 +550,7 @@ static void initialize_stack(const char *file_name, void **esp)
   argc = 0;
   token = strtok_r((char*)file_name, " ", &save_ptr);
 
-  while (token != NULL)
+  while (token)
   {
     num_of_bytes = strlen(token) + 1;
     *esp -= num_of_bytes;
