@@ -264,21 +264,16 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   //Added begins
-  /*char *loc_of_space;
-  loc_of_space = strstr(file_name, " ");
-  if (loc_of_space)
-    *loc_of_space = '\0';*/
   char *save_ptr, *file_cpy;
   int n = strlen(file_name) + 1;
   file_cpy = (char *)malloc(n);
   strlcpy(file_cpy, file_name, n);
   file_cpy = strtok_r(file_cpy, " ", &save_ptr);
-  /* Open executable file. */
+
+  /* Open executable file. Original Code (Just Argument Changed) */
   file = filesys_open (file_cpy);
+
   free(file_cpy);
-  /*if(loc_of_space)
-    *loc_of_space = ' ';*/
-  
   //Added Ends
 
   if (file == NULL) 
