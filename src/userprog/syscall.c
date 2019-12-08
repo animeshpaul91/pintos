@@ -189,7 +189,7 @@ void exit(int status)
     list_push_back(&parent->child_list, &exiting_child->elem);
 
     if (!parent->exec_called)
-      sema_up(&curr->parent->parent_sema);
+      sema_up(&parent->parent_sema);
   }
 
   /* Close all associated file descriptors of the exiting process */
@@ -288,7 +288,7 @@ static int open(const char *file)
 static int filesize(int fd)
 {
   struct file_desc_mapper *fdm = get_file_from_fd(fd);
-  return ((fdm != NULL)? file_length(fdm->exe): -1);
+  return ((fdm)? file_length(fdm->exe): -1);
 }
 
  static int read(int fd, void *buffer, unsigned size)
